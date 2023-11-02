@@ -1,6 +1,13 @@
-from blockchain import Account, Tx
+from blockchain import *
+import hashlib
+import asyncio
 
 mempool = []
+genesis = Block(
+    hashlib.sha256(b'').digest(),
+    0,
+)
+asyncio.run(genesis.mine())
 
 
 def submit_tx(tx: Tx):
@@ -20,3 +27,6 @@ if __name__ == '__main__':
     submit_tx(Tx(account3, account2, 10))
 
     print(mempool)
+
+    print(genesis.hash().hex())
+    print(genesis.validate())
