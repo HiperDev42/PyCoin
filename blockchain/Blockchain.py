@@ -57,17 +57,17 @@ class Blockchain:
     def __init__(self) -> None:
         self.db = Database()
         self.chain = self.db.get_chain()
-        print(self.chain)
         if not self.chain:
             self.chain = []
             self.append(Blockchain.genesis)
 
     def last_hash(self):
-        return self.chain[-1]
+        if len(self.chain) > 0:
+            return self.chain[-1]
+        return b'\x00' * 32
     
-    def get_block(self, idx: int):
-        hash = self.chain[idx].hex()
-        block_json = self.db.get(hash)
+    def get_block(self, hash: bytes):
+        block_json = self.db.get(hash.hex())
         block = Block.from_json(block_json)
         return block
 
@@ -78,5 +78,4 @@ class Blockchain:
         self.db.set(block)
     
     def dump(self):
-        print(self.chain)
         self.db._dump()

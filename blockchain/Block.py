@@ -38,18 +38,31 @@ class Block(BlockHeader):
     def to_json(self):
         return {
             'prev_block': self.prev_block.hex(),
+            'time': self.time,
+            'bits': self.bits,
             'nonce': self.nonce,
+            'txs': [tx.to_json() for tx in self.txs]
         }
 
     @staticmethod
     def from_json(serial):
         prev_block = bytes.fromhex(serial.get('prev_block'))
+        time = serial.get('time')
+        bits = serial.get('bits')
         nonce = serial.get('nonce')
-        block = Block(prev_block, nonce=nonce)
+        txs = [Tx.from_json(tx_json) for tx_json in serial.get('txs')]
+        block = Block(prev_block, time=time, nonce=nonce, bits=bits, txs=txs)
         return block
 
     def __repr__(self) -> str:
         return self.hash().hex()
+
+    def show(self):
+        print(f'Block ({self.hash().hex()})')
+        print(f'\t- Prev block: {self.prev_block.hex()}')
+        print(f'\t- Nonce: {self.nonce}')
+        print(f'\t- Bits: {self.bits}')
+        print(f'\t- Time: {self.time}')
 
     def validate(self):
         block_hash = self.hash()

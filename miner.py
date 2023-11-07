@@ -1,7 +1,6 @@
 from blockchain import *
 import hashlib
 import asyncio
-import pickledb
 
 mempool = []
 genesis = Block(
@@ -20,10 +19,6 @@ if __name__ == '__main__':
     account2 = Account(2)
     account3 = Account(3)
 
-    for i in range(len(blockchain.chain)):
-        block = blockchain.get_block(i)
-        print(block, block.nonce)
-
     if len(blockchain.chain) < 2:
         new_block = Block(
             blockchain.last_hash(),
@@ -32,3 +27,7 @@ if __name__ == '__main__':
 
         blockchain.append(new_block)
         blockchain.dump()
+    
+    for block_hash in blockchain.chain:
+        block = blockchain.get_block(block_hash)
+        block.show()
