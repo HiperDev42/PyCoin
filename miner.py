@@ -1,6 +1,7 @@
 from blockchain import *
 import hashlib
 import asyncio
+import pickledb
 
 mempool = []
 genesis = Block(
@@ -8,7 +9,7 @@ genesis = Block(
     0,
 )
 asyncio.run(genesis.mine())
-
+blockchain = Blockchain()
 
 def submit_tx(tx: Tx):
     mempool.append(tx)
@@ -19,14 +20,15 @@ if __name__ == '__main__':
     account2 = Account(2)
     account3 = Account(3)
 
-    print(account1, account2, account3)
+    for i in range(len(blockchain.chain)):
+        block = blockchain.get_block(i)
+        print(block, block.nonce)
 
-    submit_tx(Tx(account1, account2, 100))
-    submit_tx(Tx(account2, account3, 50))
-    submit_tx(Tx(account3, account1, 10))
-    submit_tx(Tx(account3, account2, 10))
+    if len(blockchain.chain) < 2:
+        new_block = Block(
+            blockchain.last_hash(),
+        )
+        asyncio.run(new_block.mine())
 
-    print(mempool)
-
-    print(genesis.hash().hex())
-    print(genesis.validate())
+        blockchain.append(new_block)
+        blockchain.dump()

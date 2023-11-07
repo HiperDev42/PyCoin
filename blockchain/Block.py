@@ -28,12 +28,25 @@ class BlockHeader:
 class Block(BlockHeader):
     bits: int = 8
 
-    def __init__(self, prev_block, time, bits: int = 4, nonce: int = 0, txs=[]) -> None:
+    def __init__(self, prev_block, time = 0, bits: int = 4, nonce: int = 0, txs=[]) -> None:
         self.prev_block = prev_block
         self.time = time
         self.bits = bits
         self.nonce = nonce
         self.txs = txs
+    
+    def to_json(self):
+        return {
+            'prev_block': self.prev_block.hex(),
+            'nonce': self.nonce,
+        }
+
+    @staticmethod
+    def from_json(serial):
+        prev_block = bytes.fromhex(serial.get('prev_block'))
+        nonce = serial.get('nonce')
+        block = Block(prev_block, nonce=nonce)
+        return block
 
     def __repr__(self) -> str:
         return self.hash().hex()
