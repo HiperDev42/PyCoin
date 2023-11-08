@@ -1,4 +1,4 @@
-from . import Tx
+from .Tx import Tx
 from .utils import get_merkle_root
 import hashlib
 import struct
@@ -27,8 +27,9 @@ class BlockHeader:
 
 class Block(BlockHeader):
     bits: int = 8
+    txs: list[Tx]
 
-    def __init__(self, prev_block, time = 0, bits: int = 4, nonce: int = 0, txs=[]) -> None:
+    def __init__(self, prev_block, time = 0, bits: int = 8, nonce: int = 0, txs=[]) -> None:
         self.prev_block = prev_block
         self.time = time
         self.bits = bits
@@ -71,12 +72,9 @@ class Block(BlockHeader):
         if block_hash[-1] & mask == 0:
             return True
         return False
-
-    async def mine(self):
-        self.nonce = 0
-        while not self.validate():
-            self.nonce += 1
-        return self
+    
+    def checksum(self, in_hash):
+        return in_hash == self.hash()
 
     @property
     def merkle_root(self):
