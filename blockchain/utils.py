@@ -15,4 +15,4 @@ def get_merkle_root(tree: list):
             hash = hashlib.sha256(h1+h2).digest()
             new_tree.append(hash)
         cpy = new_tree
-    return cpy
+    return cpy[0]

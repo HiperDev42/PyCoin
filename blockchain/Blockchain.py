@@ -35,7 +35,7 @@ class Database:
     def get_chain(self):
         encoded_chain = self.db.get('chain')
         if not encoded_chain:
-            return False
+            return []
         chain = [bytes.fromhex(h) for h in encoded_chain]
         return chain
     
@@ -49,17 +49,10 @@ class Database:
 
 class Blockchain:
     db: Database = None
-    genesis = Block(
-        b"\xe3\xb0\xc4B\x98\xfc\x1c\x14\x9a\xfb\xf4\xc8\x99o\xb9$'\xaeA\xe4d\x9b\x93L\xa4\x95\x99\x1bxR\xb8U",
-        nonce=39,
-    )
 
     def __init__(self) -> None:
         self.db = Database()
         self.chain = self.db.get_chain()
-        if not self.chain:
-            self.chain = []
-            self.append(Blockchain.genesis)
 
     def last_hash(self):
         if len(self.chain) > 0:
