@@ -3,7 +3,7 @@ import socket
 import struct
 from . import utils
 import logging
-from typing import Callable
+from typing import Callable, List
 import threading
 
 
@@ -18,7 +18,7 @@ class Node:
     _msg_header = struct.Struct('4s12sI4s')
 
     _commands = {}
-    _threads = []
+    _threads: List[threading.Thread] = []
     _stop: threading.Event
 
     def __init__(self, ip='0.0.0.0', port=5500) -> None:
@@ -27,11 +27,11 @@ class Node:
         self._stop = threading.Event()
 
     def _init_sock(self, max_connections):
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.bind((self.ip, self.port))
-        sock.listen(max_connections)
+        self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.socket.bind((self.ip, self.port))
+        self.socket.listen(max_connections)
 
-        return sock
+        return self.socket
 
     def command(self, name: str):
         def assign(action: Callable):
@@ -63,17 +63,28 @@ class Node:
         conn.close()
         print(f'End of connection {addr}')
 
-    def run(self, max_connections=10) -> None:
-        try:
-            node_socket = self._init_sock(max_connections)
-            print(f'Running node on port {self.port}')
-
-            while True:
-                conn, addr = node_socket.accept()
+    def _accept(self):
+        while not self._stop.is_set():
+            try:
+                conn, addr = self.socket.accept()
                 thread = threading.Thread(
                     target=self.handler, args=(conn, addr))
                 self._threads.append(thread)
                 thread.start()
-        except KeyboardInterrupt:
-            print('Interrupting')
-            self._stop.set()
+            except Exception as e:
+                print(e)
+
+    def run(self, max_connections=10) -> None:
+        self.socket = self._init_sock(max_connections)
+        print(f'Running node on port {self.port}')
+
+        thread = threading.Thread(target=self._accept)
+        self._threads.append(thread)
+        thread.start()
+        return thread
+
+    def stop(self):
+        self._stop.set()
+        self.socket.close()
+        for thread in self._threads:
+            thread.join()

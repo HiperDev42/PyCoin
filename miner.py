@@ -1,10 +1,13 @@
 from blockchain import *
 from network.Node import Node
 from typing import Tuple
+from random import randint
 import asyncio
 import time
 import logging
 import json
+import time
+import threading
 
 logger = logging.getLogger(__name__)
 
@@ -13,6 +16,7 @@ node = Node()
 reward_account = Account(1)
 mempool = {}
 blockchain = Blockchain()
+running = threading.Event()
 
 
 def submit_tx(tx: Tx):
@@ -49,32 +53,38 @@ async def mine_block():
     )
 
     while not block.validate():
-        block.nonce += 1
+        block.nonce = randint(0, (1 << 32)-1)
 
     return block
 
+
+def miner():
+    while not running.is_set():
+        time.sleep(10)
+        print('Mining')
+        block = asyncio.run(mine_block())
+
+        logger.info(f'Added new block')
+        blockchain.append(block)
+        blockchain.flush()
+
+        for block_hash in blockchain.chain:
+            block = blockchain.get_block(block_hash)
+            block.show()
+
+        balance1 = blockchain.get_balance(Account(1))
+        print(f'Balance 1: {balance1}')
+
+        balance2 = blockchain.get_balance(Account(2))
+        print(f'Balance 2: {balance2}')
+
+
+mining_thread = threading.Thread(target=miner)
+
 if __name__ == '__main__':
-
-    account1 = Account(1)
-    account2 = Account(2)
-    account3 = Account(3)
-
-    submit_tx(Tx(account1, account2, 30))
-
-    block = asyncio.run(mine_block())
-    logger.info(f'Added new block')
-
-    blockchain.append(block)
-    blockchain.flush()
-
-    for block_hash in blockchain.chain:
-        block = blockchain.get_block(block_hash)
-        block.show()
-
-    balance1 = blockchain.get_balance(account1)
-    print(f'Balance 1: {balance1}')
-
-    balance2 = blockchain.get_balance(account2)
-    print(f'Balance 2: {balance2}')
-
     node.run()
+    try:
+        miner()
+    finally:
+        print('Stoping node...')
+        node.stop()
