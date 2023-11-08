@@ -54,6 +54,8 @@ class Blockchain:
         self.db = Database()
         self.chain = self.db.get_chain()
 
+        self.validate_chain()
+
     def last_hash(self):
         if len(self.chain) > 0:
             return self.chain[-1]
@@ -84,6 +86,12 @@ class Blockchain:
         self.chain.append(hash)
         self.db.set_chain(self.chain)
         self.db.set(block)
+    
+    def validate_chain(self):
+        for block_hash in self.chain:
+            block = self.get_block(block_hash)
+            if not block.validate():
+                raise Exception('Chain corrupted')
     
     def flush(self):
         self.db.set_chain(self.chain)

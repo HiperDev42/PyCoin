@@ -6,8 +6,10 @@ reward_account = Account(1)
 mempool = []
 blockchain = Blockchain()
 
+
 def submit_tx(tx: Tx):
     mempool.append(tx)
+
 
 async def mine_block():
     reward = Tx(Account(0), reward_account, 50)
@@ -24,7 +26,7 @@ async def mine_block():
 
     while not block.validate():
         block.nonce += 1
-    
+
     return block
 
 if __name__ == '__main__':

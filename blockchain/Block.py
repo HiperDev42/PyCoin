@@ -1,6 +1,7 @@
 from .Tx import Tx
 from .utils import get_merkle_root
 from datetime import datetime
+from typing import List
 import hashlib
 import struct
 
@@ -28,16 +29,16 @@ class BlockHeader:
 
 class Block(BlockHeader):
     bits: int = 8
-    txs: list[Tx]
+    txs: List[Tx]
 
-    def __init__(self, prev_block, time = 0, bits: int = 8, nonce: int = 0, txs=[]) -> None:
+    def __init__(self, prev_block, time=0, bits: int = 8, nonce: int = 0, txs=[]) -> None:
         self.prev_block = prev_block
         self.time = time
         self.bits = bits
         self.nonce = nonce
         self.txs = txs
-    
-    def to_json(self):
+
+    def to_json(self) -> dict:
         return {
             'prev_block': self.prev_block.hex(),
             'time': self.time,
@@ -59,21 +60,21 @@ class Block(BlockHeader):
     def __repr__(self) -> str:
         return self.hash().hex()
 
-    def show(self):
+    def show(self) -> None:
         print(f'Block ({self.hash().hex()})')
         print(f'\t- Prev block: {self.prev_block.hex()}')
         print(f'\t- Nonce: {self.nonce}')
         print(f'\t- Bits: {self.bits}')
         print(f'\t- Time: {datetime.fromtimestamp(self.time)}')
 
-    def validate(self):
+    def validate(self) -> bool:
         block_hash = self.hash()
         mask = (1 << (self.bits))-1
 
         if block_hash[-1] & mask == 0:
             return True
         return False
-    
+
     def checksum(self, in_hash):
         return in_hash == self.hash()
 
