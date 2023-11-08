@@ -1,20 +1,44 @@
 from blockchain import *
+from network.Node import Node
+from typing import Tuple
 import asyncio
 import time
+import logging
+import json
+
+logger = logging.getLogger(__name__)
+
+node = Node()
 
 reward_account = Account(1)
-mempool = []
+mempool = {}
 blockchain = Blockchain()
 
 
 def submit_tx(tx: Tx):
-    mempool.append(tx)
+    tx_hash = tx.get_hash().hex()
+    mempool[tx_hash] = tx
+
+
+@node.command('ping')
+def ping(payload):
+    return 'pong', b''
+
+
+@node.command('tx')
+def tx(payload: bytes) -> Tuple[str, bytes]:
+    tx_json = json.loads(payload.decode())
+    tx = Tx.from_json(tx_json)
+
+    result = submit_tx(tx)
+
+    return 'ack', b''
 
 
 async def mine_block():
     reward = Tx(Account(0), reward_account, 50)
 
-    txs = mempool.copy()
+    txs = list(mempool.values())
     mempool.clear()
     txs.append(reward)
 
@@ -30,6 +54,7 @@ async def mine_block():
     return block
 
 if __name__ == '__main__':
+
     account1 = Account(1)
     account2 = Account(2)
     account3 = Account(3)
@@ -37,7 +62,7 @@ if __name__ == '__main__':
     submit_tx(Tx(account1, account2, 30))
 
     block = asyncio.run(mine_block())
-    print('New block')
+    logger.info(f'Added new block')
 
     blockchain.append(block)
     blockchain.flush()
@@ -51,3 +76,5 @@ if __name__ == '__main__':
 
     balance2 = blockchain.get_balance(account2)
     print(f'Balance 2: {balance2}')
+
+    node.run()
