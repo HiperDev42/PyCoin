@@ -1,5 +1,5 @@
 from . import Block
-import hashlib
+from .Account import Account
 import pickledb
 import json
 
@@ -63,12 +63,28 @@ class Blockchain:
         block_json = self.db.get(hash.hex())
         block = Block.from_json(block_json)
         return block
-
+    
+    def get_balance(self, account: Account):
+        balance = 0
+        for hash in self.chain:
+            block = self.get_block(hash)
+            for tx in block.txs:
+                if tx.src == account:
+                    balance -= tx.amount
+                if tx.dst == account:
+                    balance += tx.amount
+        
+        return balance
+    
     def append(self, block: Block):
+        if not block.validate():
+            raise Exception('block not valid')
+
         hash = block.hash()
         self.chain.append(hash)
         self.db.set_chain(self.chain)
         self.db.set(block)
     
-    def dump(self):
+    def flush(self):
+        self.db.set_chain(self.chain)
         self.db._dump()

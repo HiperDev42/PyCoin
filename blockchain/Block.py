@@ -1,5 +1,6 @@
 from .Tx import Tx
 from .utils import get_merkle_root
+from datetime import datetime
 import hashlib
 import struct
 
@@ -63,7 +64,7 @@ class Block(BlockHeader):
         print(f'\t- Prev block: {self.prev_block.hex()}')
         print(f'\t- Nonce: {self.nonce}')
         print(f'\t- Bits: {self.bits}')
-        print(f'\t- Time: {self.time}')
+        print(f'\t- Time: {datetime.fromtimestamp(self.time)}')
 
     def validate(self):
         block_hash = self.hash()

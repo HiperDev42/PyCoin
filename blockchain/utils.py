@@ -9,7 +9,7 @@ def get_merkle_root(tree: list):
         if len(cpy) % 2 == 1:
             cpy.append(cpy[-1])
         new_tree = []
-        for i in range(len(cpy)):
+        for i in range(0, len(cpy), 2):
             h1 = cpy[i]
             h2 = cpy[i+1]
             hash = hashlib.sha256(h1+h2).digest()
