@@ -3,6 +3,7 @@ from click_shell import make_click_shell
 import logging
 import network
 import blockchain
+import miner
 
 
 peer: network.Peer = network.Peer()
@@ -47,6 +48,21 @@ def tx(source: int, destination: int, amount: int):
 @app.command()
 def ping():
     pass
+
+
+@app.group('miner')
+def miner_group():
+    pass
+
+
+@miner_group.command('start')
+def start_miner():
+    miner.start()
+
+
+@miner_group.command('stop')
+def stop_miner():
+    miner.stop()
 
 
 if __name__ == '__main__':

@@ -3,11 +3,14 @@ from network.Node import Node
 from typing import Tuple
 from random import randint
 import asyncio
-import time
 import logging
 import json
 import time
 import threading
+
+
+MINE_INTERVAL: int = 10
+
 
 logger = logging.getLogger(__name__)
 
@@ -16,7 +19,8 @@ node = Node()
 reward_account = Account(1)
 mempool = {}
 blockchain = Blockchain()
-running = threading.Event()
+_stop_event: threading.Event = threading.Event()
+_mining_thread: threading.Thread
 
 
 def submit_tx(tx: Tx):
@@ -59,8 +63,12 @@ async def mine_block():
 
 
 def miner():
-    while not running.is_set():
-        time.sleep(10)
+    _stop_event.clear()
+    logger.debug('Miner starting...')
+    while not _stop_event.is_set():
+        if _stop_event.wait(MINE_INTERVAL):
+            break
+
         print('Mining')
         block = asyncio.run(mine_block())
 
@@ -68,7 +76,7 @@ def miner():
         blockchain.append(block)
         blockchain.flush()
 
-        for block_hash in blockchain.chain:
+        for block_hash in blockchain.chain[-4:]:
             block = blockchain.get_block(block_hash)
             block.show()
 
@@ -79,7 +87,22 @@ def miner():
         print(f'Balance 2: {balance2}')
 
 
-mining_thread = threading.Thread(target=miner)
+
+def start():
+    global _mining_thread
+    _mining_thread = threading.Thread(target=miner)
+    _mining_thread.start()
+
+
+def stop():
+    global _mining_thread
+    _stop_event.set()
+    if _mining_thread:
+        _mining_thread.join()
+        _mining_thread = None
+
+    logger.info('Miner stopped')
+
 
 if __name__ == '__main__':
     node.run()
@@ -88,5 +111,5 @@ if __name__ == '__main__':
     except KeyboardInterrupt:
         pass
     finally:
-        print('Stoping node...')
+        print('Stopping node...')
         node.stop()
