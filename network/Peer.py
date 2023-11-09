@@ -3,6 +3,10 @@ from . import utils
 
 import json
 import socket
+import logging
+
+
+logger = logging.getLogger(__name__)
 
 
 class Peer:
@@ -15,13 +19,24 @@ class Peer:
         sock.connect((self.ip, self.port))
         return sock
 
+    def test_connection(self):
+        logger.info('Testing connection...')
+        try:
+            return self.ping()
+        except Exception as e:
+            logger.error('Got exception when trying to connect')
+            logger.error(e)
+            return False
+
     def ping(self):
         peer_socket = self._connect()
         msg = utils.encode_message('ping')
         peer_socket.send(msg)
 
         response = utils.recv_message(peer_socket)
-        print(response)
+        if response[0] == 'pong':
+            return True
+        return False
 
     def tx(self, tx: Tx):
         sock = self._connect()
@@ -30,4 +45,4 @@ class Peer:
         sock.send(msg)
 
         response = utils.recv_message(sock)
-        print(response)
+        return response[0] == 'ack'
