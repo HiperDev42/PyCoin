@@ -85,6 +85,8 @@ if __name__ == '__main__':
     node.run()
     try:
         miner()
+    except KeyboardInterrupt:
+        pass
     finally:
         print('Stoping node...')
         node.stop()

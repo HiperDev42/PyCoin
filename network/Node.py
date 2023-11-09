@@ -1,4 +1,5 @@
 import asyncio
+import select
 import socket
 import struct
 from . import utils
@@ -66,11 +67,13 @@ class Node:
     def _accept(self):
         while not self._stop.is_set():
             try:
-                conn, addr = self.socket.accept()
-                thread = threading.Thread(
-                    target=self.handler, args=(conn, addr))
-                self._threads.append(thread)
-                thread.start()
+                readable, _, _ = select.select([self.socket], [], [], 0.25)
+                if self.socket in readable:
+                    conn, addr = self.socket.accept()
+                    thread = threading.Thread(
+                        target=self.handler, args=(conn, addr))
+                    self._threads.append(thread)
+                    thread.start()
             except Exception as e:
                 print(e)
 
@@ -86,5 +89,7 @@ class Node:
     def stop(self):
         self._stop.set()
         self.socket.close()
+        print('threads', self._threads)
         for thread in self._threads:
+            print('Joining thread', thread)
             thread.join()
