@@ -1,6 +1,7 @@
 from blockchain import Tx
 from . import utils
 
+from secrets import token_bytes
 import json
 import socket
 import logging
@@ -29,14 +30,17 @@ class Peer:
             return False
 
     def ping(self):
-        peer_socket = self._connect()
-        msg = utils.encode_message('ping')
-        peer_socket.send(msg)
+        try:
+            peer_socket = self._connect()
+            rand_bytes = token_bytes(64)
+            msg = utils.encode_message('ping', rand_bytes)
+            peer_socket.send(msg)
 
-        response = utils.recv_message(peer_socket)
-        if response[0] == 'pong':
-            return True
-        return False
+            response = utils.recv_message(peer_socket)
+            if response[0] == 'pong' and response[1] == rand_bytes:
+                return True
+        finally:
+            return False
 
     def tx(self, tx: Tx):
         sock = self._connect()

@@ -30,7 +30,7 @@ def submit_tx(tx: Tx):
 
 @node.command('ping')
 def ping(payload):
-    return 'pong', b''
+    return 'pong', payload
 
 
 @node.command('tx')

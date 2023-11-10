@@ -4,10 +4,37 @@ import logging
 import network
 import blockchain
 import miner
+from colorama import Fore, Style
+
+
+class LogFormatter(logging.Formatter):
+    fmt: str = '%(asctime)s - %(name)s - {levelNameColor}%(levelname)s{reset} - %(message)s (%(filename)s:%(lineno)d)'
+    FORMATS = {
+        logging.DEBUG: fmt.format(levelNameColor=Fore.BLUE, reset=Style.RESET_ALL),
+        logging.INFO: fmt.format(levelNameColor=Fore.CYAN, reset=Style.RESET_ALL),
+        logging.WARNING: fmt.format(levelNameColor=Fore.LIGHTRED_EX, reset=Style.RESET_ALL),
+        logging.ERROR: fmt.format(levelNameColor=Fore.RED, reset=Style.RESET_ALL),
+        logging.CRITICAL: fmt.format(levelNameColor=Fore.MAGENTA, reset=Style.RESET_ALL),
+    }
+
+    def format(self, record):
+        log_fmt = self.FORMATS.get(record.levelno)
+        formatter = logging.Formatter(log_fmt)
+        return formatter.format(record)
+
+class strings:
+    SUCCESS = f'{Fore.GREEN}Success{Style.RESET_ALL}'
+    FAIL = f'{Fore.RED}Failed{Style.RESET_ALL}'
+
+
+logger = logging.getLogger(__name__)
+ch = logging.StreamHandler()
+ch.setLevel(logging.DEBUG)
+ch.setFormatter(LogFormatter())
+logger.addHandler(ch)
 
 
 peer: network.Peer = network.Peer()
-logger = logging.getLogger(__name__)
 
 
 @click.group(invoke_without_command=True)
@@ -49,7 +76,10 @@ def tx(source: int, destination: int, amount: int):
 
 @app.command()
 def ping():
-    pass
+    if peer.ping():
+        print(strings.SUCCESS)
+    else:
+        print(strings.FAIL)
 
 
 @app.group('miner')
