@@ -20,7 +20,7 @@ reward_account = Account(1)
 mempool = {}
 blockchain = Blockchain()
 _stop_event: threading.Event = threading.Event()
-_mining_thread: threading.Thread
+_mining_thread: threading.Thread = None
 
 
 def submit_tx(tx: Tx):
@@ -64,12 +64,12 @@ async def mine_block():
 
 def miner():
     _stop_event.clear()
-    logger.debug('Miner starting...')
+    logger.info('Miner starting...')
     while not _stop_event.is_set():
         if _stop_event.wait(MINE_INTERVAL):
             break
 
-        print('Mining')
+        logger.info('Mining')
         block = asyncio.run(mine_block())
 
         logger.info(f'Added new block')
@@ -87,7 +87,6 @@ def miner():
         print(f'Balance 2: {balance2}')
 
 
-
 def start():
     global _mining_thread
     _mining_thread = threading.Thread(target=miner)
@@ -100,8 +99,11 @@ def stop():
     if _mining_thread:
         _mining_thread.join()
         _mining_thread = None
+        logger.info('Miner stopped')
 
-    logger.info('Miner stopped')
+
+def is_alive():
+    return _mining_thread.is_alive()
 
 
 if __name__ == '__main__':

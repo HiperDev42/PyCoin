@@ -18,6 +18,8 @@ def app(ctx, verbose):
         logging.basicConfig(level=logging.DEBUG)
     shell = make_click_shell(ctx)
     shell.cmdloop()
+    miner.stop()
+    exit(0)
 
 
 @app.command()
