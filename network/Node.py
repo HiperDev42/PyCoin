@@ -49,7 +49,11 @@ class Node:
                     break
 
                 action = self._commands.get(command)
-                response_command, response_payload = action(payload)
+                ctx = {
+                    'data': payload,
+                    'address': addr
+                }
+                response_command, response_payload = action(ctx)
 
                 response_bytes = utils.encode_message(
                     response_command, response_payload)
@@ -77,7 +81,7 @@ class Node:
             except Exception as e:
                 print(e)
 
-    def run(self, max_connections=10) -> None:
+    def start(self, max_connections=10) -> None:
         self.socket = self._init_sock(max_connections)
         print(f'Running node on port {self.port}')
 

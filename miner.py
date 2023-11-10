@@ -1,6 +1,6 @@
 from blockchain import *
-from network.Node import Node
-from typing import Tuple
+from network import Node, Peer
+from typing import Tuple, Set
 from random import randint
 import asyncio
 import logging
@@ -29,13 +29,13 @@ def submit_tx(tx: Tx):
 
 
 @node.command('ping')
-def ping(payload):
-    return 'pong', payload
+def ping(ctx):
+    return 'pong', ctx['data']
 
 
 @node.command('tx')
-def tx(payload: bytes) -> Tuple[str, bytes]:
-    tx_json = json.loads(payload.decode())
+def tx(ctx) -> Tuple[str, bytes]:
+    tx_json = json.loads(ctx['data'].decode())
     tx = Tx.from_json(tx_json)
 
     result = submit_tx(tx)
@@ -107,11 +107,4 @@ def is_alive():
 
 
 if __name__ == '__main__':
-    node.run()
-    try:
-        miner()
-    except KeyboardInterrupt:
-        pass
-    finally:
-        print('Stopping node...')
-        node.stop()
+    miner()
