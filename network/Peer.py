@@ -1,7 +1,9 @@
 from blockchain import Tx
 from . import utils
+from .Address import Address
 
 from secrets import token_bytes
+from typing import List
 import json
 import socket
 import logging
@@ -10,17 +12,46 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-class Peer:
-    def __init__(self, ip='127.0.0.1', port=5500) -> None:
-        self.ip = ip
-        self.port = port
+class commands:
+    PING = 'ping'
+    GET_ADDRESS = 'getaddr'
+    VERSION = 'version'
 
-    def _connect(self):
+
+class Peer:
+    def __init__(self, ip='127.0.0.1', port=5500, version=1) -> None:
+        self._address = Address(ip, port)
+        self.version = version
+
+    @property
+    def address(self) -> Address:
+        return self._address
+
+    def _connect(self) -> socket.socket:
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.connect((self.ip, self.port))
+        sock.connect(self._address.addr)
         return sock
 
-    def test_connection(self):
+    def _send(self, sock: socket.socket, command: str, payload) -> int:
+        if type(payload) is str:
+            payload = payload.encode()
+        message = utils.encode_message(command, payload)
+        sent = sock.send(message)
+        return sent
+
+    def _send_version(self) -> bool:
+        with self._connect() as sock:
+            version_json = {
+                'version': self.version,
+            }
+
+            self._send(sock, commands.VERSION, json.dumps(version_json))
+            response_cmd, data = utils.recv_message(sock)
+            if response_cmd == 'verack':
+                return True
+            return False
+
+    def test_connection(self) -> bool:
         logger.info('Testing connection...')
         try:
             return self.ping()
@@ -42,6 +73,17 @@ class Peer:
         finally:
             return False
 
+    def get_address(self) -> List[Address]:
+        try:
+            peer_socket = self._connect()
+            self._send(peer_socket, commands.GET_ADDRESS, b'')
+            response_cmd, data = utils.recv_message(peer_socket)
+            raw_json = json.loads(data.decode())
+            addrs = [Address.from_json(addr_json) for addr_json in raw_json]
+            return addrs
+        except:
+            return []
+
     def tx(self, tx: Tx):
         sock = self._connect()
         tx_bytes = json.dumps(tx.to_json()).encode()
@@ -50,3 +92,8 @@ class Peer:
 
         response = utils.recv_message(sock)
         return response[0] == 'ack'
+
+    def __eq__(self, __value: object) -> bool:
+        if not isinstance(__value, Peer):
+            raise ValueError(f'Expected Peer, got {type(__value)}')
+        return self.address == __value.address
