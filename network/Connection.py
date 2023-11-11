@@ -7,8 +7,9 @@ class Connection:
     _address: Address
     _socket: socket.socket
 
-    def __init__(self, address: Address) -> None:
+    def __init__(self, address: Address, socket: socket.socket = None) -> None:
         self._address = address
+        self._socket = socket
 
     @property
     def address(self) -> Address:
@@ -39,3 +40,6 @@ class Connection:
     def recv_command(self):
         command, data = utils.recv_message(self._socket)
         return command, data
+
+    def close(self):
+        return self._socket.close()

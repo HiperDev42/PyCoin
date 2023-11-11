@@ -1,4 +1,3 @@
-import asyncio
 import select
 import socket
 import struct
@@ -6,6 +5,7 @@ from . import utils
 import logging
 from typing import Callable, List
 import threading
+from .Connection import Connection
 
 
 MAGIC = b'PYC1'
@@ -40,33 +40,29 @@ class Node:
             return action
         return assign
 
-    def handler(self, conn, addr):
+    def handler(self, conn: Connection):
         print('New task started')
         while not self._stop.is_set():
             try:
-                command, payload = utils.recv_message(conn)
+                command, payload = conn.recv_command()
                 if not command:
                     break
 
                 action = self._commands.get(command)
                 ctx = {
                     'data': payload,
-                    'address': addr
+                    'address': conn.address
                 }
                 response_command, response_payload = action(ctx)
 
-                response_bytes = utils.encode_message(
-                    response_command, response_payload)
-
-                conn.send(response_bytes)
+                conn.send_command(response_command, response_payload)
             except Exception as e:
                 conn.close()
-                print('Error')
+                logger.fatal('Error')
                 raise e
-                break
 
         conn.close()
-        print(f'End of connection {addr}')
+        print(f'End of connection {conn.address}')
 
     def _accept(self):
         while not self._stop.is_set():
@@ -74,8 +70,9 @@ class Node:
                 readable, _, _ = select.select([self.socket], [], [], 0.25)
                 if self.socket in readable:
                     conn, addr = self.socket.accept()
+                    connection = Connection(addr, socket=conn)
                     thread = threading.Thread(
-                        target=self.handler, args=(conn, addr))
+                        target=self.handler, args=connection)
                     self._threads.append(thread)
                     thread.start()
             except Exception as e:
