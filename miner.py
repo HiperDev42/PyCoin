@@ -91,10 +91,12 @@ def start():
     global _mining_thread
     _mining_thread = threading.Thread(target=miner)
     _mining_thread.start()
+    node.start()
 
 
 def stop():
     global _mining_thread
+    node.stop()
     _stop_event.set()
     if _mining_thread:
         _mining_thread.join()
