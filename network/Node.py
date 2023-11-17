@@ -20,18 +20,20 @@ class Node:
     _msg_header = struct.Struct('4s12sI4s')
 
     _commands = {}
+    _accept_thread: threading.Thread
     _threads: List[threading.Thread] = []
-    _stop: threading.Event
+    _kill_event: threading.Event()
 
     def __init__(self, ip='0.0.0.0', port=5500) -> None:
         self.ip = ip
         self.port = port
-        self._stop = threading.Event()
+        self._kill_event: threading.Event = threading.Event()
 
-    def _init_sock(self, max_connections):
+    def _init_sock(self):
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.socket.bind((self.ip, self.port))
-        self.socket.listen(max_connections)
+        self.socket.listen()
 
         return self.socket
 
@@ -42,7 +44,8 @@ class Node:
         return assign
 
     def handler(self, conn: Connection):
-        while not self._stop.is_set():
+        print('New task started')
+        while not self._kill_event.is_set():
             try:
                 command, payload = conn.recv_command()
                 if not command:
@@ -73,7 +76,7 @@ class Node:
         conn.close()
 
     def _accept(self):
-        while not self._stop.is_set():
+        while not self._kill_event.is_set():
             try:
                 readable, _, _ = select.select([self.socket], [], [], 0.25)
                 if self.socket in readable:
@@ -86,18 +89,19 @@ class Node:
             except Exception as e:
                 print(e)
 
-    def start(self, max_connections=10) -> None:
-        self.socket = self._init_sock(max_connections)
-        logger.info(f'Running node on port {self.port}')
+    def start(self) -> None:
+        self._kill_event.clear()
+        self.socket = self._init_sock()
 
-        thread = threading.Thread(target=self._accept)
-        self._threads.append(thread)
-        thread.start()
-        return thread
+        self._accept_thread = threading.Thread(target=self._accept)
+        self._accept_thread.start()
+
+        logger.info(f'Running node on address ({(self.ip, self.port)})')
 
     def stop(self):
-        self._stop.set()
+        self._kill_event.set()
         for thread in self._threads:
             thread.join()
-        if self.socket:
-            self.socket.close()
+        self._accept_thread.join()
+        self.socket.close()
+        logger.debug('Node stopped')
