@@ -61,18 +61,22 @@ def connect(ip: str, port: int):
         print(strings.FAIL)
 
 
-@app.command()
-@click.argument('source')
-@click.argument('destination')
-@click.argument('amount')
+@app.command('tx')
+@click.argument('source', type=click.INT)
+@click.argument('destination', type=click.INT)
+@click.argument('amount', type=click.INT)
 def tx(source: int, destination: int, amount: int):
+    if type(source) != int:
+        raise Exception('Not int')
+
     src_acc = blockchain.Account(source)
     dst_acc = blockchain.Account(destination)
     tx = blockchain.Tx(src_acc, dst_acc, amount)
+
     if peer.tx(tx):
-        print('Sent')
+        print(strings.SUCCESS)
     else:
-        print('Error')
+        print(strings.FAIL)
 
 
 @app.command()

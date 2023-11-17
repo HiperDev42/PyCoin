@@ -1,11 +1,13 @@
+from . import utils
+from .Connection import Connection
+from typing import Callable, List
+
+import logging
 import select
 import socket
 import struct
-from . import utils
-import logging
-from typing import Callable, List
 import threading
-from .Connection import Connection
+import traceback
 
 
 MAGIC = b'PYC1'
@@ -54,9 +56,16 @@ class Node:
                     'data': payload,
                     'address': conn.address
                 }
-                response_command, response_payload = action(ctx)
 
-                conn.send_command(response_command, response_payload)
+                try:
+                    response_command, response_payload = action(ctx)
+                    conn.send_command(response_command, response_payload)
+                except Exception:
+                    logger.critical('Got unexpected error')
+                    logger.error(traceback.format_exc())
+
+                    conn.send_command('reject', b'Internal server error')
+
             except Exception as e:
                 conn.close()
                 logger.fatal('Error')

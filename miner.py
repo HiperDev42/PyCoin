@@ -36,6 +36,7 @@ def ping(ctx):
 @node.command('tx')
 def tx(ctx) -> Tuple[str, bytes]:
     tx_json = json.loads(ctx['data'].decode())
+    logger.debug(tx_json)
     tx = Tx.from_json(tx_json)
 
     result = submit_tx(tx)
