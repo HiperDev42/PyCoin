@@ -80,7 +80,7 @@ class Node:
 
     def start(self, max_connections=10) -> None:
         self.socket = self._init_sock(max_connections)
-        print(f'Running node on port {self.port}')
+        logger.info(f'Running node on port {self.port}')
 
         thread = threading.Thread(target=self._accept)
         self._threads.append(thread)
@@ -89,8 +89,7 @@ class Node:
 
     def stop(self):
         self._stop.set()
-        self.socket.close()
-        print('threads', self._threads)
         for thread in self._threads:
-            print('Joining thread', thread)
             thread.join()
+        if self.socket:
+            self.socket.close()

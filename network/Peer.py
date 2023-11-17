@@ -14,9 +14,12 @@ logger = logging.getLogger(__name__)
 
 
 class Commands:
+    ACKNOWLEDGE = 'ack'
+    ADDRESS = 'addr'
+    GET_ADDRESS = 'getaddr'
     PING = 'ping'
     PONG = 'pong'
-    GET_ADDRESS = 'getaddr'
+    TX = 'tx'
     VERSION = 'version'
 
 
@@ -83,24 +86,26 @@ class Peer:
         return False
 
     def get_address(self) -> List[Address]:
-        try:
-            peer_socket = self._connect()
-            self._send(peer_socket, Commands.GET_ADDRESS, b'')
-            response_cmd, data = utils.recv_message(peer_socket)
+        with Connection(self.address) as conn:
+
+            conn.send_command(Commands.GET_ADDRESS, b'')
+
+            response_cmd, data = conn.recv_command()
+
+            if response_cmd != Commands.ADDRESS:
+                raise Exception('Unexpected response')
+
             raw_json = json.loads(data.decode())
             addrs = [Address.from_json(addr_json) for addr_json in raw_json]
+
             return addrs
-        except:
-            return []
 
     def tx(self, tx: Tx):
-        sock = self._connect()
-        tx_bytes = json.dumps(tx.to_json()).encode()
-        msg = utils.encode_message('tx', tx_bytes)
-        sock.send(msg)
+        with Connection(self.address) as conn:
+            conn.send_command(Commands.TX, tx.to_json())
 
-        response = utils.recv_message(sock)
-        return response[0] == 'ack'
+            response = conn.recv_command()
+            return response[0] == Commands.ACKNOWLEDGE
 
     def __eq__(self, __value: object) -> bool:
         if not isinstance(__value, Peer):
