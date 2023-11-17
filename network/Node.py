@@ -41,12 +41,13 @@ class Node:
         return assign
 
     def handler(self, conn: Connection):
-        print('New task started')
         while not self._stop.is_set():
             try:
                 command, payload = conn.recv_command()
                 if not command:
                     break
+
+                logger.debug(f'Recieved command ({command}): {payload}')
 
                 action = self._commands.get(command)
                 ctx = {
@@ -62,7 +63,6 @@ class Node:
                 raise e
 
         conn.close()
-        print(f'End of connection {conn.address}')
 
     def _accept(self):
         while not self._stop.is_set():
@@ -72,7 +72,7 @@ class Node:
                     conn, addr = self.socket.accept()
                     connection = Connection(addr, socket=conn)
                     thread = threading.Thread(
-                        target=self.handler, args=connection)
+                        target=self.handler, args=(connection,))
                     self._threads.append(thread)
                     thread.start()
             except Exception as e:

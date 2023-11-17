@@ -69,32 +69,34 @@ def miner():
         if _stop_event.wait(MINE_INTERVAL):
             break
 
-        logger.info('Mining')
+        # logger.debug('Mining')
         block = asyncio.run(mine_block())
 
-        logger.info(f'Added new block')
+        logger.debug(f'Added new block')
         blockchain.append(block)
         blockchain.flush()
 
         for block_hash in blockchain.chain[-4:]:
             block = blockchain.get_block(block_hash)
-            block.show()
+            # block.show()
 
         balance1 = blockchain.get_balance(Account(1))
-        print(f'Balance 1: {balance1}')
+        # print(f'Balance 1: {balance1}')
 
         balance2 = blockchain.get_balance(Account(2))
-        print(f'Balance 2: {balance2}')
+        # print(f'Balance 2: {balance2}')
 
 
 def start():
     global _mining_thread
     _mining_thread = threading.Thread(target=miner)
     _mining_thread.start()
+    node.start()
 
 
 def stop():
     global _mining_thread
+    node.stop()
     _stop_event.set()
     if _mining_thread:
         _mining_thread.join()

@@ -17,8 +17,15 @@ class Connection:
 
     def connect(self) -> bool:
         self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self._socket.connect(self._address)
+        self._socket.connect(self._address.addr)
         return True
+
+    def __enter__(self):
+        self.connect()
+        return self
+
+    def __exit__(self, *_):
+        self.close()
 
     def send_command(self, command: str, data: any) -> None:
         if isinstance(data, str):

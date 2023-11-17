@@ -1,6 +1,7 @@
 from blockchain import Tx
 from . import utils
 from .Address import Address
+from .Connection import Connection
 
 from secrets import token_bytes
 from typing import List
@@ -12,8 +13,9 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-class commands:
+class Commands:
     PING = 'ping'
+    PONG = 'pong'
     GET_ADDRESS = 'getaddr'
     VERSION = 'version'
 
@@ -45,7 +47,7 @@ class Peer:
                 'version': self.version,
             }
 
-            self._send(sock, commands.VERSION, json.dumps(version_json))
+            self._send(sock, Commands.VERSION, json.dumps(version_json))
             response_cmd, data = utils.recv_message(sock)
             if response_cmd == 'verack':
                 return True
@@ -54,7 +56,8 @@ class Peer:
     def test_connection(self) -> bool:
         logger.info('Testing connection...')
         try:
-            return self.ping()
+            x = self.ping()
+            return x
         except Exception as e:
             logger.error('Got exception when trying to connect')
             logger.error(e)
@@ -62,21 +65,27 @@ class Peer:
 
     def ping(self):
         try:
-            peer_socket = self._connect()
-            rand_bytes = token_bytes(64)
-            msg = utils.encode_message('ping', rand_bytes)
-            peer_socket.send(msg)
+            with Connection(self.address) as conn:
+                rand_bytes = token_bytes(64)
+                conn.send_command(Commands.PING, rand_bytes)
 
-            response = utils.recv_message(peer_socket)
-            if response[0] == 'pong' and response[1] == rand_bytes:
-                return True
-        finally:
+                response = conn.recv_command()
+                if response[0] == Commands.PONG and response[1] == rand_bytes:
+                    return True
+                logger.debug('Recieved unexpected response')
+                logger.debug(response)
+        except Exception as e:
+            logger.error('Got error')
+            logger.error(e)
             return False
+        finally:
+            logger.debug('FINALLY')
+        return False
 
     def get_address(self) -> List[Address]:
         try:
             peer_socket = self._connect()
-            self._send(peer_socket, commands.GET_ADDRESS, b'')
+            self._send(peer_socket, Commands.GET_ADDRESS, b'')
             response_cmd, data = utils.recv_message(peer_socket)
             raw_json = json.loads(data.decode())
             addrs = [Address.from_json(addr_json) for addr_json in raw_json]

@@ -22,6 +22,7 @@ class LogFormatter(logging.Formatter):
         formatter = logging.Formatter(log_fmt)
         return formatter.format(record)
 
+
 class strings:
     SUCCESS = f'{Fore.GREEN}Success{Style.RESET_ALL}'
     FAIL = f'{Fore.RED}Failed{Style.RESET_ALL}'
@@ -55,9 +56,9 @@ def app(ctx, verbose):
 def connect(ip: str, port: int):
     peer = network.Peer(ip, port)
     if peer.test_connection():
-        print('Connected')
+        print(strings.SUCCESS)
     else:
-        print('Not connected')
+        print(strings.FAIL)
 
 
 @app.command()
