@@ -30,9 +30,9 @@ class strings:
 
 logger = logging.getLogger(__name__)
 ch = logging.StreamHandler()
-ch.setLevel(logging.DEBUG)
 ch.setFormatter(LogFormatter())
 logger.addHandler(ch)
+logging.root.addHandler(ch)
 
 
 peer: network.Peer = network.Peer()

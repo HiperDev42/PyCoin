@@ -12,7 +12,6 @@ import traceback
 
 MAGIC = b'PYC1'
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
 
 
 class Node:
