@@ -20,9 +20,10 @@ class Node:
     _msg_header = struct.Struct('4s12sI4s')
 
     _commands = {}
-    _accept_thread: threading.Thread
+    _accept_thread: threading.Thread = None
     _threads: List[threading.Thread] = []
     _kill_event: threading.Event()
+    _socket: socket.socket = None
 
     def __init__(self, ip='0.0.0.0', port=5500) -> None:
         self.ip = ip
@@ -30,12 +31,12 @@ class Node:
         self._kill_event: threading.Event = threading.Event()
 
     def _init_sock(self):
-        self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        self.socket.bind((self.ip, self.port))
-        self.socket.listen()
+        self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self._socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        self._socket.bind((self.ip, self.port))
+        self._socket.listen()
 
-        return self.socket
+        return self._socket
 
     def command(self, name: str):
         def assign(action: Callable):
@@ -44,7 +45,6 @@ class Node:
         return assign
 
     def handler(self, conn: Connection):
-        print('New task started')
         while not self._kill_event.is_set():
             try:
                 command, payload = conn.recv_command()
@@ -77,21 +77,18 @@ class Node:
 
     def _accept(self):
         while not self._kill_event.is_set():
-            try:
-                readable, _, _ = select.select([self.socket], [], [], 0.25)
-                if self.socket in readable:
-                    conn, addr = self.socket.accept()
-                    connection = Connection(addr, socket=conn)
-                    thread = threading.Thread(
-                        target=self.handler, args=(connection,))
-                    self._threads.append(thread)
-                    thread.start()
-            except Exception as e:
-                print(e)
+            readable, _, _ = select.select([self._socket], [], [], 0.25)
+            if self._socket in readable:
+                conn, addr = self._socket.accept()
+                connection = Connection(addr, socket=conn)
+                thread = threading.Thread(
+                    target=self.handler, args=(connection,))
+                self._threads.append(thread)
+                thread.start()
 
     def start(self) -> None:
         self._kill_event.clear()
-        self.socket = self._init_sock()
+        self._socket = self._init_sock()
 
         self._accept_thread = threading.Thread(target=self._accept)
         self._accept_thread.start()
@@ -102,6 +99,10 @@ class Node:
         self._kill_event.set()
         for thread in self._threads:
             thread.join()
-        self._accept_thread.join()
-        self.socket.close()
+
+        if self._accept_thread:
+            self._accept_thread.join()
+
+        if self._socket:
+            self._socket.close()
         logger.debug('Node stopped')
