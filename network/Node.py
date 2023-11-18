@@ -1,4 +1,3 @@
-from . import utils
 from .Connection import Connection
 from typing import Callable, List
 
@@ -94,6 +93,9 @@ class Node:
         self._accept_thread.start()
 
         logger.info(f'Running node on address ({(self.ip, self.port)})')
+
+    def wait(self):
+        return self._accept_thread.join()
 
     def stop(self):
         self._kill_event.set()

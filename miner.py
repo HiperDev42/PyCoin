@@ -14,13 +14,11 @@ MINE_INTERVAL: int = 10
 
 logger = logging.getLogger(__name__)
 
-node = Node()
-
 reward_account = Account(1)
 mempool = {}
 blockchain = Blockchain()
 _stop_event: threading.Event = threading.Event()
-_mining_thread: threading.Thread = None
+_miner_thread: threading.Thread = None
 
 
 def submit_tx(tx: Tx):
@@ -28,23 +26,8 @@ def submit_tx(tx: Tx):
     mempool[tx_hash] = tx
 
 
-@node.command('ping')
-def ping(ctx):
-    return 'pong', ctx['data']
-
-
-@node.command('tx')
-def tx(ctx) -> Tuple[str, bytes]:
-    tx_json = json.loads(ctx['data'].decode())
-    logger.debug(tx_json)
-    tx = Tx.from_json(tx_json)
-
-    result = submit_tx(tx)
-
-    return 'ack', b''
-
-
 async def mine_block():
+    logger.debug('Mining new block...')
     reward = Tx(Account(0), reward_account, 50)
 
     txs = list(mempool.values())
@@ -64,50 +47,38 @@ async def mine_block():
 
 
 def miner():
-    _stop_event.clear()
-    logger.info('Miner starting...')
+    logger.info('Miner start')
     while not _stop_event.is_set():
         if _stop_event.wait(MINE_INTERVAL):
             break
 
-        # logger.debug('Mining')
         block = asyncio.run(mine_block())
 
         logger.debug(f'Added new block')
         blockchain.append(block)
         blockchain.flush()
-
-        for block_hash in blockchain.chain[-4:]:
-            block = blockchain.get_block(block_hash)
-            # block.show()
-
-        balance1 = blockchain.get_balance(Account(1))
-        # print(f'Balance 1: {balance1}')
-
-        balance2 = blockchain.get_balance(Account(2))
-        # print(f'Balance 2: {balance2}')
+    logger.info('Miner stopped')
 
 
 def start():
-    global _mining_thread
-    _mining_thread = threading.Thread(target=miner)
-    _mining_thread.start()
-    node.start()
+    global _miner_thread
+    _stop_event.clear()
+    _miner_thread = threading.Thread(target=miner)
+    _miner_thread.start()
 
 
 def stop():
-    global _mining_thread
-    node.stop()
+    global _miner_thread
     _stop_event.set()
-    if _mining_thread:
-        _mining_thread.join()
-        _mining_thread = None
-        logger.info('Miner stopped')
+    if _miner_thread:
+        _miner_thread.join()
+        _miner_thread = None
 
 
 def is_alive():
-    return _mining_thread.is_alive()
+    return _miner_thread.is_alive()
 
 
 if __name__ == '__main__':
+    logger.setLevel(logging.DEBUG)
     miner()
