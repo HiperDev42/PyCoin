@@ -27,6 +27,16 @@ def command(name: str | None = None):
     return decorator
 
 
+def response(name: str):
+    def decorator(func: Callable):
+        def execute(*args, **kwargs) -> Message:
+            data = func(*args, **kwargs)
+            return Message(command=name, payload=data)
+        execute.__name__ = func.__name__
+        return execute
+    return decorator
+
+
 def __get_action(name: str):
     return actions[name]
 

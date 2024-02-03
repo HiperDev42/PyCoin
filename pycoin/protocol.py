@@ -92,7 +92,7 @@ class ConnectionInterface:
         except:
             return False
 
-    def request(self, command: str, data: bytes) -> Message:
+    def request(self, command: str, data: bytes = b'') -> Message:
         request = Message(command=command, payload=data)
         success = self.send(request)
         if not success:
