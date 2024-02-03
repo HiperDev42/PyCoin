@@ -6,6 +6,10 @@ import socket
 _msg_header = struct.Struct('4s12sI4s')
 
 
+def get_checksum(payload: bytes) -> bytes:
+    return sha256(payload).digest()[:4]
+
+
 @dataclass
 class MessageHeader:
     magic: bytes
@@ -24,11 +28,27 @@ class MessageHeader:
 
 @dataclass
 class Message:
-    header: MessageHeader
+    command: MessageHeader
     payload: bytes
+    magic: bytes = b"\x00\x00\x00\x00"
+
+    @property
+    def size(self):
+        return len(self.payload)
+
+    @property
+    def checksum(self):
+        return get_checksum(self.payload)
+
+    @property
+    def header(self):
+        return MessageHeader(self.magic, self.command, self.size, self.checksum)
+
+    def pack(self):
+        return self.header.pack() + self.payload
 
 
-def read_header(conn: socket.socket) -> MessageHeader:
+def _read_header(conn: socket.socket) -> MessageHeader:
     header_bytes = conn.recv(_msg_header.size)
     magic, command_encoded, size, checksum = _msg_header.unpack(header_bytes)
 
@@ -38,12 +58,8 @@ def read_header(conn: socket.socket) -> MessageHeader:
     return header
 
 
-def get_checksum(payload: bytes) -> bytes:
-    return sha256(payload).digest()[:4]
-
-
-def read_msg(conn: socket.socket) -> Message:
-    header = read_header(conn)
+def _read_msg(conn: socket.socket) -> Message:
+    header = _read_header(conn)
     payload = conn.recv(header.size)
 
     if len(payload) != header.size:
@@ -52,19 +68,13 @@ def read_msg(conn: socket.socket) -> Message:
     if checksum != header.checksum:
         raise Exception("Invalid checksum")
 
-    msg = Message(header, payload)
+    msg = Message(header.command, payload, magic=header.magic)
 
     return msg
 
 
-def pack_message(payload: bytes) -> Message:
-    header = MessageHeader(
-        magic=b"\x00\x00\x00\x00",
-        command="",
-        size=len(payload),
-        checksum=b"\x00\x00\x00\x00",
-    )
-    return Message(header, payload)
+def _send_message(conn: socket.socket, msg: Message) -> None:
+    conn.sendall(msg.pack())
 
 
 class ConnectionInterface:
@@ -72,22 +82,26 @@ class ConnectionInterface:
         self.socket = connection
         self.address = address
 
-    def connect(self, address: tuple) -> None:
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.connect(address)
-        self.socket = sock
-
     def recv(self) -> Message:
-        return read_msg(self.socket)
+        return _read_msg(self.socket)
 
-    def send(self, command: str, payload: bytes) -> bool:
-        header = MessageHeader(
-            b'\x00\x00\x00\x00',
-            command,
-            len(payload),
-            get_checksum(payload),
-        )
+    def send(self, msg: Message) -> bool:
+        try:
+            _send_message(self.socket, msg)
+            return True
+        except:
+            return False
 
-        header_bytes = header.pack()
-        self.socket.sendall(header_bytes + payload)
-        return True
+    def request(self, command: str, data: bytes) -> Message:
+        request = Message(command=command, payload=data)
+        success = self.send(request)
+        if not success:
+            raise Exception("Failed to send request")
+        response = self.recv()
+        return response
+
+
+def connect(address: tuple) -> ConnectionInterface:
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.connect(address)
+    return ConnectionInterface(sock, address)
