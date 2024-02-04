@@ -1,4 +1,5 @@
 from pycoin.protocol import ConnectionInterface, Message
+from pycoin.logs import logger
 from typing import Callable
 import asyncio
 import socket
@@ -43,6 +44,7 @@ def __get_action(name: str):
 
 async def handler(conn: ConnectionInterface):
     request = conn.recv()
+    logger.info(f'Request - {request.command}')
     action = __get_action(request.command)
     try:
         response = action(request.payload)
@@ -55,7 +57,7 @@ async def handler(conn: ConnectionInterface):
 async def run():
     __init()
     _, port = node_server.getsockname()
-    print(f"PyCoin node server started on port {port}")
+    logger.info(f"PyCoin node server started on port {port}")
 
     loop = asyncio.get_event_loop()
 
