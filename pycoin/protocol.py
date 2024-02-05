@@ -111,23 +111,20 @@ class Connection:
         await self.writer.wait_closed()
 
     async def connect(self):
-        logger.debug('Connecting')
         self.reader, self.writer = await asyncio.open_connection(self.host, self.port)
-        logger.debug('Transport set')
+        logger.debug('Connected')
 
     async def _read_msg(self) -> Message:
-        logger.debug('Reading msg')
         msg_bytes = await self.reader.read(1024)
         return Message.unpack(msg_bytes)
 
     async def _send_msg(self, msg: Message):
-        logger.debug('Writing msg')
         msg_bytes = msg.pack()
         self.writer.write(msg_bytes)
         await self.writer.drain()
 
     async def request(self, command: str, payload: bytes = b'') -> Message:
-        logger.debug('Startinig request')
+        logger.debug(f'Startinig request - {command}')
         msg = Message(command=command, payload=payload)
         await self._send_msg(msg)
 
