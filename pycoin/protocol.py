@@ -17,6 +17,12 @@ class MessageHeader:
     size: int
     checksum: bytes
 
+    @staticmethod
+    def unpack(data: bytes):
+        magic, command_encoded, size, checksum = _msg_header.unpack_from(data)
+        command = bytes(command_encoded).strip(b'\x00').decode('ascii')
+        return MessageHeader(magic, command, size, checksum)
+
     def pack(self):
         return _msg_header.pack(
             self.magic,
@@ -43,6 +49,18 @@ class Message:
     @property
     def header(self):
         return MessageHeader(self.magic, self.command, self.size, self.checksum)
+
+    @staticmethod
+    def unpack(data: bytes):
+        header = MessageHeader.unpack(data)
+        offset = _msg_header.size
+        payload = data[offset:offset+header.size]
+        if len(payload) != header.size:
+            raise Exception("Invalid payload size")
+        checksum = get_checksum(payload)
+        if checksum != header.checksum:
+            raise Exception("Invalid checksum")
+        return Message(magic=header.magic, command=header.command, payload=payload)
 
     def pack(self):
         return self.header.pack() + self.payload
