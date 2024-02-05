@@ -1,5 +1,7 @@
+from pycoin.logs import logger
 from dataclasses import dataclass
 from hashlib import sha256
+import asyncio
 import struct
 import socket
 
@@ -95,31 +97,39 @@ def _send_message(conn: socket.socket, msg: Message) -> None:
     conn.sendall(msg.pack())
 
 
-class ConnectionInterface:
-    def __init__(self, connection: socket.socket | None = None, address: tuple | None = None) -> None:
-        self.socket = connection
-        self.address = address
+class Connection:
+    def __init__(self, host: str, port: int) -> None:
+        self.host = host
+        self.port = port
 
-    def recv(self) -> Message:
-        return _read_msg(self.socket)
+    async def __aenter__(self):
+        await self.connect()
+        return self
 
-    def send(self, msg: Message) -> bool:
-        try:
-            _send_message(self.socket, msg)
-            return True
-        except:
-            return False
+    async def __aexit__(self, exc_type, exc_value, traceback):
+        self.writer.close()
+        await self.writer.wait_closed()
 
-    def request(self, command: str, data: bytes = b'') -> Message:
-        request = Message(command=command, payload=data)
-        success = self.send(request)
-        if not success:
-            raise Exception("Failed to send request")
-        response = self.recv()
+    async def connect(self):
+        logger.debug('Connecting')
+        self.reader, self.writer = await asyncio.open_connection(self.host, self.port)
+        logger.debug('Transport set')
+
+    async def _read_msg(self) -> Message:
+        logger.debug('Reading msg')
+        msg_bytes = await self.reader.read(1024)
+        return Message.unpack(msg_bytes)
+
+    async def _send_msg(self, msg: Message):
+        logger.debug('Writing msg')
+        msg_bytes = msg.pack()
+        self.writer.write(msg_bytes)
+        await self.writer.drain()
+
+    async def request(self, command: str, payload: bytes = b'') -> Message:
+        logger.debug('Startinig request')
+        msg = Message(command=command, payload=payload)
+        await self._send_msg(msg)
+
+        response = await self._read_msg()
         return response
-
-
-def connect(address: tuple) -> ConnectionInterface:
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.connect(address)
-    return ConnectionInterface(sock, address)
