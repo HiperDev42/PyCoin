@@ -1,5 +1,6 @@
 from pycoin.logs import logger
 from dataclasses import dataclass
+from random import randbytes
 from hashlib import sha256
 import asyncio
 import struct
@@ -68,35 +69,6 @@ class Message:
         return self.header.pack() + self.payload
 
 
-def _read_header(conn: socket.socket) -> MessageHeader:
-    header_bytes = conn.recv(_msg_header.size)
-    magic, command_encoded, size, checksum = _msg_header.unpack(header_bytes)
-
-    command = command_encoded.strip(b'\x00').decode('ascii')
-    header = MessageHeader(magic, command, size, checksum)
-
-    return header
-
-
-def _read_msg(conn: socket.socket) -> Message:
-    header = _read_header(conn)
-    payload = conn.recv(header.size)
-
-    if len(payload) != header.size:
-        raise Exception("Invalid payload size")
-    checksum = get_checksum(payload)
-    if checksum != header.checksum:
-        raise Exception("Invalid checksum")
-
-    msg = Message(header.command, payload, magic=header.magic)
-
-    return msg
-
-
-def _send_message(conn: socket.socket, msg: Message) -> None:
-    conn.sendall(msg.pack())
-
-
 class Connection:
     def __init__(self, host: str, port: int) -> None:
         self.host = host
@@ -130,3 +102,12 @@ class Connection:
 
         response = await self._read_msg()
         return response
+
+    async def ping(self) -> bool:
+        try:
+            data = randbytes(32)
+            response = await self.request('ping', data)
+            assert data == response.payload
+            return True
+        except:
+            return False
