@@ -23,7 +23,6 @@ class Block:
         for key, value in jsonDict.items():
             if isinstance(value, bytes):
                 jsonDict[key] = value.hex()
-        logger.debug(jsonDict)
         return json.dumps(jsonDict, sort_keys=True)
 
     @property
@@ -46,4 +45,6 @@ class Blockchain:
             block.prev = self.last_block.hash
         else:
             block.prev = b'\x00' * 32
+        logger.debug('Adding new block to chain ({}: {})'.format(
+            block.index, block.hash.hex()))
         self.blocks.append(block)
