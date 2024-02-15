@@ -90,7 +90,7 @@ class Connection:
         msg_bytes = await self.reader.read(1024)
         return Message.unpack(msg_bytes)
 
-    async def _send_msg(self, msg: Message):
+    async def send_msg(self, msg: Message):
         msg_bytes = msg.pack()
         self.writer.write(msg_bytes)
         await self.writer.drain()
@@ -98,7 +98,7 @@ class Connection:
     async def request(self, command: str, payload: bytes = b'') -> Message:
         logger.debug(f'Startinig request - {command}')
         msg = Message(command=command, payload=payload)
-        await self._send_msg(msg)
+        await self.send_msg(msg)
 
         response = await self._read_msg()
         return response

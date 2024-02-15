@@ -47,7 +47,8 @@ class Handler(asyncio.Protocol):
             if not action:
                 raise Exception("Unknown command")
             response = action(request.payload)
-            self.transport.write(response.pack())
+            if not response is None:
+                self.transport.write(response.pack())
         except Exception as e:
             logger.exception(e)
             sep = ' '
