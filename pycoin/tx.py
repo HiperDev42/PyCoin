@@ -12,6 +12,8 @@ class Tx:
     amount: int  # Amount
     timestamp: int  # Timestamp
 
+    _json = ['sender', 'receiver', 'amount', 'timestamp']
+
     def __init__(self, sender: RSA.RsaKey, receiver: RSA.RsaKey, amount: int, timestamp: int) -> None:
         self.sender = sender
         self.receiver = receiver
