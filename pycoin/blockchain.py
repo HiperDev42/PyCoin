@@ -53,6 +53,7 @@ class Blockchain:
         self.reward = 50
 
     def minePendingTxs(self, miner) -> None:
+        logger.debug('Transactions to mine {}'.format(len(self.pendingTxs)))
         logger.info('Mining block...')
         txs = self.pendingTxs
         self.pendingTxs = []
