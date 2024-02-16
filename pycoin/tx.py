@@ -30,6 +30,9 @@ class Tx:
         """
         if not key.has_private():
             raise ValueError("The provided key is not a private key.")
+        if key.public_key() != self.sender:
+            raise ValueError(
+                "The provided key does not match the sender's public key.")
         try:
             sig_scheme = pkcs1_15.new(key)
             signature = sig_scheme.sign(self.__hash())
