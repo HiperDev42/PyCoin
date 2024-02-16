@@ -1,3 +1,4 @@
+import pycoin.utils as utils
 import json
 from hashlib import sha256
 
@@ -8,11 +9,14 @@ class Tx:
     amount: int
     timestamp: int
 
-    def __init__(self) -> None:
-        pass
+    def __init__(self, sender: str, receiver: str, amount: int, timestamp: int) -> None:
+        self.sender = sender
+        self.receiver = receiver
+        self.amount = amount
+        self.timestamp = timestamp
 
     def toJSON(self):
-        return json.dumps(self, default=lambda o: o.__dict__, sort_keys=True)
+        return json.dumps(self, cls=utils.Encoder, sort_keys=True)
 
     @property
     def hash(self) -> bytes:

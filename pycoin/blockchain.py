@@ -1,7 +1,9 @@
 from hashlib import sha256
 from pycoin.tx import Tx
 from pycoin.logs import logger
+from pycoin.utils import Encoder
 import json
+import time
 
 
 class Block:
@@ -18,12 +20,21 @@ class Block:
         self.nonce = 0
         self.txs = txs
 
+    def mineBlock(self, difficulty=4) -> bool:
+        start = time.time()
+        while not self.validateHash(difficulty):
+            self.nonce += 1
+        end = time.time()
+        ellapsed = end - start
+
+        logger.debug("Block mined in {:.2f} seconds".format(ellapsed))
+        return True
+
     def toJSON(self):
-        jsonDict = self.__dict__.copy()
-        for key, value in jsonDict.items():
-            if isinstance(value, bytes):
-                jsonDict[key] = value.hex()
-        return json.dumps(jsonDict, sort_keys=True)
+        return json.dumps(self, cls=Encoder, sort_keys=True)
+
+    def validateHash(self, difficulty=4) -> bool:
+        return self.hash.startswith(b'\x00' * difficulty)
 
     @property
     def hash(self) -> bytes:
@@ -32,13 +43,43 @@ class Block:
 
 class Blockchain:
     blocks: list[Block]
+    pendingTxs: list[Tx]
+    difficulty: int = 2
+    reward: int
 
     def __init__(self) -> None:
         self.blocks = []
+        self.pendingTxs = []
+        self.reward = 50
+
+    def minePendingTxs(self, miner) -> None:
+        logger.info('Mining block...')
+        txs = self.pendingTxs
+        self.pendingTxs = []
+
+        last_block = self.last_block
+
+        index = 0
+        if last_block:
+            index = last_block.index + 1
+
+        newBlock = Block(txs, time.time(), index)
+        newBlock.prev = self.last_hash
+
+        newBlock.mineBlock(self.difficulty)
+
+        self.blocks.append(newBlock)
+        logger.debug('New block added to chain ({})'.format(
+            newBlock.hash.hex()))
 
     @property
     def last_block(self) -> Block:
         return self.blocks[-1] if len(self.blocks) > 0 else None
+
+    @property
+    def last_hash(self) -> bytes:
+        last_block = self.last_block
+        return last_block.hash if last_block else b'\x00' * 32
 
     def add_block(self, block: Block) -> None:
         if len(self.blocks) > 0:
