@@ -74,7 +74,27 @@ class Blockchain:
             newBlock.hash.hex()))
 
     def submitTx(self, tx: Tx) -> None:
-        self.pendingTxs.append(tx)
+        """
+        Submits a transaction to the pending transactions list.
+
+        Args:
+            tx (Tx): The transaction to be submitted.
+
+        Raises:
+            ValueError: If the transaction is not of type Tx.
+        """
+        if not isinstance(tx, Tx):
+            raise ValueError("Invalid transaction type. Expected Tx object.")
+
+        try:
+            if tx.validateSignature():
+                self.pendingTxs.append(tx)
+                logger.info('Transaction submitted: {}'.format(tx.hash.hex()))
+                return True
+        except Exception as e:
+            logger.error(
+                f'Error occurred while appending transaction to pending transactions: {e}')
+            return False
 
     @property
     def last_block(self) -> Block:

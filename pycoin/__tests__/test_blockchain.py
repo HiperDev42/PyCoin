@@ -10,6 +10,7 @@ def test_blockchain():
 
     tx = pycoin.Tx(alice_key.public_key(),
                    bob_key.public_key(), 10, int(time()))
-    signature = tx.sign(alice_key)
+    tx.sign(alice_key)
 
-    assert tx.verifySignature(signature)
+    assert tx.validateSignature()
+    assert blockchain.submitTx(tx)

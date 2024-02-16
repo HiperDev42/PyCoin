@@ -37,41 +37,43 @@ class Tx:
                 "The provided key does not match the sender's public key.")
         try:
             sig_scheme = pkcs1_15.new(key)
-            signature = sig_scheme.sign(self.__hash())
-            return signature
+            self.signature = sig_scheme.sign(self.__hash())
+            return self.signature
         except Exception as e:
             logger.error(f'Error occurred while signing the transaction: {e}')
             return None
 
-    def verifySignature(self, signature: bytes) -> bool:
+    def isSigned(self) -> bool:
         """
-            Verify the signature of the transaction.
+        Check if the transaction is signed.
+
+        Returns:
+            bool: True if the transaction is signed, False otherwise.
+        """
+        if isinstance(self.signature, bytes) and len(self.signature) > 0:
+            return True
+        else:
+            return False
+
+    def validateSignature(self) -> bool:
+        """
+            Validate the signature of the transaction.
 
             This method verifies the signature of the transaction using the sender's public key and the provided signature.
 
-            Parameters:
-            - signature: bytes
-                The signature of the transaction.
-
             Raises:
-            - ValueError: If the signature parameter is empty.
-            - TypeError: If the signature is not of type `bytes`.
+            - ValueError: If the transaction is not signed.
 
             Returns:
             - bool
                 True if the signature is valid, False otherwise.
         """
-        if not isinstance(signature, bytes):
-            raise TypeError("The signature must be of type bytes.")
-        if not signature:
-            raise ValueError("The signature parameter cannot be empty.")
+        if not self.isSigned():
+            raise ValueError("The transaction is not signed.")
 
-        try:
-            sig_scheme = pkcs1_15.new(self.sender)
-            sig_scheme.verify(self.__hash(), signature)
-            return True
-        except ValueError:
-            return False
+        sig_scheme = pkcs1_15.new(self.sender)
+        sig_scheme.verify(self.__hash(), self.signature)
+        return True
 
     def toJSON(self):
         return json.dumps(self, cls=utils.Encoder, sort_keys=True)
