@@ -13,6 +13,8 @@ class Block:
     nonce: int  # nonce to solve the proof of work
     txs: list[Tx]  # list of transactions in the block
 
+    _json = ['index', 'timestamp', 'prev', 'nonce', 'txs']
+
     def __init__(self, txs, timestamp, index) -> None:
         self.index = index
         self.timestamp = timestamp
