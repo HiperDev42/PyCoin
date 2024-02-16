@@ -14,3 +14,6 @@ def test_blockchain():
 
     assert tx.validateSignature()
     assert blockchain.submitTx(tx)
+    blockchain.minePendingTxs(alice_key.public_key())
+
+    blockchain.save()

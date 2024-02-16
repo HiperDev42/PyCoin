@@ -2,7 +2,10 @@ from hashlib import sha256
 from pycoin.tx import Tx
 from pycoin.logs import logger
 from pycoin.utils import Encoder
+from Crypto.PublicKey import RSA
+from typing import Dict
 import json
+import os
 import time
 
 
@@ -48,13 +51,35 @@ class Blockchain:
     pendingTxs: list[Tx]
     difficulty: int = 2
     reward: int
+    db_filename: str
+    __sync: bool
+    data: Dict[str, Block]
 
-    def __init__(self) -> None:
+    _json = []
+
+    def __init__(self, db_filename: str = 'blockchain.db.json', sync=False) -> None:
         self.blocks = []
         self.pendingTxs = []
         self.reward = 50
+        self.db_filename = db_filename
+        self.__sync = sync
+        self.load()
 
-    def minePendingTxs(self, miner) -> None:
+    def load(self):
+        self.data = self.__read_data()
+
+    def getBlockByHash(self, blockHash: bytes | str) -> Block | None:
+        if isinstance(blockHash, bytes):
+            blockHash = blockHash.hex()
+        return self.data.get(blockHash, None)
+
+    def addBlock(self, block: Block):
+        blockHash = block.hash.hex()
+        self.data[blockHash] = block
+        if self.__sync:
+            self.save()
+
+    def minePendingTxs(self, miner: RSA.RsaKey) -> bytes:
         logger.debug('Transactions to mine {}'.format(len(self.pendingTxs)))
         logger.info('Mining block...')
         txs = self.pendingTxs
@@ -71,9 +96,11 @@ class Blockchain:
 
         newBlock.mineBlock(self.difficulty)
 
-        self.blocks.append(newBlock)
+        self.addBlock(newBlock)
         logger.debug('New block added to chain ({})'.format(
             newBlock.hash.hex()))
+
+        return newBlock.hash
 
     def submitTx(self, tx: Tx) -> None:
         """
@@ -97,6 +124,18 @@ class Blockchain:
             logger.error(
                 f'Error occurred while appending transaction to pending transactions: {e}')
             return False
+
+    def save(self):
+        with open(self.db_filename, 'w') as f:
+            json.dump(self.data, f, cls=Encoder)
+
+    def __read_data(self):
+        try:
+            with open(self.db_filename, 'r') as f:
+                return json.load(f)
+        except (FileNotFoundError, json.JSONDecodeError) as e:
+            logger.error(f'Error occurred while reading blockchain data: {e}')
+            return {}
 
     @property
     def last_block(self) -> Block:
