@@ -25,7 +25,7 @@ class Block:
         self.nonce = 0
         self.txs = txs
 
-    def mineBlock(self, difficulty=4) -> bool:
+    def mineBlock(self, difficulty=1) -> bool:
         start = time.time()
         while not self.validateHash(difficulty):
             self.nonce += 1
@@ -49,7 +49,7 @@ class Block:
 class Blockchain:
     blocks: list[Block]
     pendingTxs: list[Tx]
-    difficulty: int = 2
+    difficulty: int = 1
     reward: int
     db_filename: str
     __sync: bool
@@ -94,7 +94,7 @@ class Blockchain:
         newBlock = Block(txs, time.time(), index)
         newBlock.prev = self.last_hash
 
-        newBlock.mineBlock(self.difficulty)
+        newBlock.mineBlock(difficulty=self.difficulty)
 
         self.addBlock(newBlock)
         logger.debug('New block added to chain ({})'.format(
