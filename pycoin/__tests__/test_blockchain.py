@@ -1,18 +1,13 @@
-from pycoin import Blockchain, Block
+import pycoin
+import pycoin.wallet
 from time import time
 
 
 def test_blockchain():
-    blockchain = Blockchain()
-    txs = []
+    blockchain = pycoin.Blockchain()
+    keys = pycoin.wallet.generate_keys()
 
-    block = Block(txs, time(), 0)
-    blockchain.add_block(block)
+    tx = pycoin.Tx("alice", "bob", 10, int(time()))
+    signature = tx.sign(keys)
 
-    block = Block(txs, time(), 1)
-    blockchain.add_block(block)
-
-    block = Block(txs, time(), 2)
-    blockchain.add_block(block)
-
-    assert len(blockchain.blocks) == 3
+    assert tx.verifySignature(signature, keys.public_key())

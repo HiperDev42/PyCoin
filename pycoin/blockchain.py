@@ -73,6 +73,9 @@ class Blockchain:
         logger.debug('New block added to chain ({})'.format(
             newBlock.hash.hex()))
 
+    def submitTx(self, tx: Tx) -> None:
+        self.pendingTxs.append(tx)
+
     @property
     def last_block(self) -> Block:
         return self.blocks[-1] if len(self.blocks) > 0 else None
