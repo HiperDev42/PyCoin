@@ -138,7 +138,13 @@ class Blockchain:
 
     @property
     def last_block(self) -> Block:
-        return self.blocks[-1] if len(self.blocks) > 0 else None
+        idx = -1
+        latest_block = None
+        for _, block in self.data.items():
+            if block.index > idx:
+                latest_block = block
+                idx = block.index
+        return latest_block
 
     @property
     def last_hash(self) -> bytes:
@@ -197,4 +203,4 @@ class BlockchainDecoder(json.JSONDecoder):
         for key, value in dct.items():
             result[key] = self.decode_class(value, cls=Block)
 
-        return dct
+        return result
