@@ -185,7 +185,6 @@ class BlockchainDecoder(json.JSONDecoder):
             for key, val in value.items():
                 hint = class_hints[key]
                 kwargs[key] = self.decode_class(val, cls=hint)
-                logger.debug(f'{key} - {hint}')
             obj = cls(**kwargs)
             return obj
 
@@ -193,12 +192,9 @@ class BlockchainDecoder(json.JSONDecoder):
 
     def decode(self, s):
         dct = super(BlockchainDecoder, self).decode(s)
-        logger.debug(dct)
         result = {}
 
         for key, value in dct.items():
             result[key] = self.decode_class(value, cls=Block)
-
-        logger.debug(result)
 
         return dct
