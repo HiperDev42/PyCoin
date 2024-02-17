@@ -3,9 +3,8 @@ from pycoin.tx import Tx
 from pycoin.logs import logger
 from pycoin.utils import Encoder
 from Crypto.PublicKey import RSA
-from typing import Dict
+from typing import Dict, get_type_hints, get_args, get_origin
 import json
-import os
 import time
 
 
@@ -18,11 +17,11 @@ class Block:
 
     _json = ['index', 'timestamp', 'prev', 'nonce', 'txs']
 
-    def __init__(self, txs, timestamp, index) -> None:
+    def __init__(self, txs, timestamp, index, prev=b'\x00' * 32, nonce=0) -> None:
         self.index = index
         self.timestamp = timestamp
-        self.prev = b'\x00' * 32
-        self.nonce = 0
+        self.prev = prev
+        self.nonce = nonce
         self.txs = txs
 
     def mineBlock(self, difficulty=1) -> bool:
@@ -132,7 +131,7 @@ class Blockchain:
     def __read_data(self):
         try:
             with open(self.db_filename, 'r') as f:
-                return json.load(f)
+                return json.load(f, cls=BlockchainDecoder)
         except (FileNotFoundError, json.JSONDecodeError) as e:
             logger.error(f'Error occurred while reading blockchain data: {e}')
             return {}
@@ -154,3 +153,52 @@ class Blockchain:
         logger.debug('Adding new block to chain ({}: {})'.format(
             block.index, block.hash.hex()))
         self.blocks.append(block)
+
+
+class BlockchainDecoder(json.JSONDecoder):
+    def __init__(self, *args, **kwargs):
+        json.JSONDecoder.__init__(
+            self, *args, **kwargs)
+
+    def decode_class(self, value: any, cls) -> any:
+        cls_origin = get_origin(cls)
+        if cls == bytes:
+            if not type(value) == str:
+                raise json.JSONDecodeError('Expected bytes')
+            return bytes.fromhex(value)
+
+        if cls == RSA.RsaKey:
+            return RSA.import_key(bytes.fromhex(value))
+
+        if cls_origin in {list, tuple} or cls in {list, tuple}:
+            if type(value) != list:
+                raise json.JSONDecodeError('Expected list')
+            sub_hint = get_args(cls)[0]
+            result = []
+            for item in value:
+                result.append(self.decode_class(item, cls=sub_hint))
+            return result
+
+        if type(value) == dict:
+            class_hints = get_type_hints(cls)
+            kwargs = {}
+            for key, val in value.items():
+                hint = class_hints[key]
+                kwargs[key] = self.decode_class(val, cls=hint)
+                logger.debug(f'{key} - {hint}')
+            obj = cls(**kwargs)
+            return obj
+
+        return value
+
+    def decode(self, s):
+        dct = super(BlockchainDecoder, self).decode(s)
+        logger.debug(dct)
+        result = {}
+
+        for key, value in dct.items():
+            result[key] = self.decode_class(value, cls=Block)
+
+        logger.debug(result)
+
+        return dct

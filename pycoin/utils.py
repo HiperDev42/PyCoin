@@ -7,7 +7,7 @@ class Encoder(json.JSONEncoder):
         if isinstance(obj, bytes):
             return obj.hex()
         if isinstance(obj, RSA.RsaKey):
-            return obj.export_key().hex()
+            return obj.export_key('DER').hex()
 
         if hasattr(obj, '_json'):
             jsonDict = {}
