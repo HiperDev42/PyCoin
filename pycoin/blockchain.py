@@ -121,7 +121,7 @@ class Blockchain:
                 return True
         except Exception as e:
             logger.error(
-                f'Error occurred while appending transaction to pending transactions: {e}')
+                f'Error occurred while adding transaction to pending transactions: {e}')
             return False
 
     def save(self):

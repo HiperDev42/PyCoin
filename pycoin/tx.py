@@ -4,21 +4,18 @@ import json
 from Crypto.Hash import SHA256
 from Crypto.PublicKey import RSA
 from Crypto.Signature import pkcs1_15
+from dataclasses import dataclass
 
 
+@dataclass
 class Tx:
     sender: RSA.RsaKey  # Sender public key
     receiver: RSA.RsaKey  # Receiver public key
     amount: int  # Amount
     timestamp: int  # Timestamp
+    signature: bytes = None  # Signature
 
-    _json = ['sender', 'receiver', 'amount', 'timestamp']
-
-    def __init__(self, sender: RSA.RsaKey, receiver: RSA.RsaKey, amount: int, timestamp: int) -> None:
-        self.sender = sender
-        self.receiver = receiver
-        self.amount = amount
-        self.timestamp = timestamp
+    _json = ['sender', 'receiver', 'amount', 'timestamp', 'signature']
 
     def sign(self, key: RSA.RsaKey) -> bytes | None:
         """
@@ -79,7 +76,15 @@ class Tx:
         return json.dumps(self, cls=utils.Encoder, sort_keys=True)
 
     def __hash(self):
-        return SHA256.new(self.toJSON().encode())
+        dct = {
+            'sender': self.sender,
+            'receiver': self.receiver,
+            'amount': self.amount,
+            'timestamp': self.timestamp
+        }
+        json_ecoded = json.dumps(dct, cls=utils.Encoder, sort_keys=True)
+
+        return SHA256.new(json_ecoded.encode())
 
     @property
     def hash(self) -> bytes:
