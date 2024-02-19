@@ -167,17 +167,17 @@ class BlockchainDecoder(json.JSONDecoder):
             self, *args, **kwargs)
 
     def decode_class(self, value: any, cls) -> any:
-        cls_origin = get_origin(cls)
-        if cls == bytes:
+        cls_origin = get_origin(cls) or cls
+        if cls is bytes:
             if not type(value) == str:
                 raise json.JSONDecodeError('Expected bytes')
             return bytes.fromhex(value)
 
-        if cls == RSA.RsaKey:
+        if cls is RSA.RsaKey:
             return RSA.import_key(bytes.fromhex(value))
 
-        if cls_origin in {list, tuple} or cls in {list, tuple}:
-            if type(value) != list:
+        if cls_origin in {list, tuple}:
+            if not isinstance(value, list):
                 raise json.JSONDecodeError('Expected list')
             sub_hint = get_args(cls)[0]
             result = []
@@ -185,7 +185,7 @@ class BlockchainDecoder(json.JSONDecoder):
                 result.append(self.decode_class(item, cls=sub_hint))
             return result
 
-        if type(value) == dict:
+        if isinstance(value, dict):
             class_hints = get_type_hints(cls)
             kwargs = {}
             for key, val in value.items():
