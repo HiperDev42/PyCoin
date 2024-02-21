@@ -5,6 +5,24 @@ from Crypto.Hash import SHA256
 from Crypto.PublicKey import RSA
 from Crypto.Signature import pkcs1_15
 from dataclasses import dataclass
+from pydantic import BaseModel
+
+
+class TxOut(BaseModel):
+    amount: int
+    pubkey_hash: bytes
+
+
+class TxIn(BaseModel):
+    prevTx: bytes
+    outIndex: int
+    signature: bytes
+    pubkey: bytes
+
+
+class TxV2(BaseModel):
+    tx_ins: list[TxIn]
+    tx_outs: list[TxOut]
 
 
 @dataclass
