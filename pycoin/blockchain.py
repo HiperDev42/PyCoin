@@ -126,7 +126,7 @@ class Blockchain:
 
     def save(self):
         with open(self.db_filename, 'w') as f:
-            json.dump(self.data, f, cls=Encoder)
+            json.dump(self.data, f, cls=Encoder, indent=4)
 
     def __read_data(self):
         try:
