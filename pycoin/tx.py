@@ -8,21 +8,34 @@ from dataclasses import dataclass
 from pydantic import BaseModel
 
 
-class TxOut(BaseModel):
+@dataclass
+class TxOut:
     amount: int
     pubkey_hash: bytes
 
 
-class TxIn(BaseModel):
+@dataclass
+class TxIn:
     prevTx: bytes
     outIndex: int
     signature: bytes
     pubkey: bytes
 
 
-class TxV2(BaseModel):
+@dataclass
+class TxV2:
     tx_ins: list[TxIn]
     tx_outs: list[TxOut]
+
+    def toJSON(self):
+        return json.dumps(self, cls=utils.Encoder, sort_keys=True)
+
+    def __hash(self):
+        return SHA256.new(self.toJSON().encode())
+
+    @property
+    def hash(self):
+        return self.__hash().digest()
 
 
 @dataclass

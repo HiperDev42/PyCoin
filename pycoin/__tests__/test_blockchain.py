@@ -1,24 +1,26 @@
 import pycoin
-import pycoin.wallet
+import pycoin.tx
 
 
-def createIfNotExists(key_filename: str) -> pycoin.wallet.Wallet:
-    try:
-        return pycoin.wallet.Wallet(key_filename)
-    except FileNotFoundError:
-        return pycoin.wallet.create_wallet(key_filename)
+# def createIfNotExists(key_filename: str) -> pycoin.wallet.Wallet:
+#     try:
+#         return pycoin.wallet.Wallet(key_filename)
+#     except FileNotFoundError:
+#         return pycoin.wallet.create_wallet(key_filename)
 
 
 def test_blockchain():
-    alice = createIfNotExists('alice.pem')
-    bob = createIfNotExists('bob.pem')
+    # alice = createIfNotExists('alice.pem')
+    # bob = createIfNotExists('bob.pem')
 
     blockchain = pycoin.Blockchain()
 
-    tx = alice.create_tx(receiver=bob.public_key, amount=10)
+    tx = pycoin.tx.TxV2(
+        tx_ins=[],
+        tx_outs=[]
+    )
 
-    assert tx.validateSignature()
-    assert blockchain.submitTx(tx)
-    blockchain.minePendingTxs(alice.public_key)
+    blockchain.submitTx(tx)
+    blockchain.minePendingTxs(None)
 
     blockchain.save()

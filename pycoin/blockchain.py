@@ -1,5 +1,5 @@
 from hashlib import sha256
-from pycoin.tx import Tx
+from pycoin.tx import Tx, TxV2
 from pycoin.logs import logger
 from pycoin.utils import Encoder
 from Crypto.PublicKey import RSA
@@ -13,7 +13,7 @@ class Block:
     timestamp: int  # timestamp of the block
     prev: bytes  # 32 bytes hash to the previous block on chain
     nonce: int  # nonce to solve the proof of work
-    txs: list[Tx]  # list of transactions in the block
+    txs: list[TxV2]  # list of transactions in the block
 
     _json = ['index', 'timestamp', 'prev', 'nonce', 'txs']
 
@@ -47,7 +47,7 @@ class Block:
 
 class Blockchain:
     blocks: list[Block]
-    pendingTxs: list[Tx]
+    pendingTxs: list[TxV2]
     difficulty: int = 1
     reward: int
     db_filename: str
@@ -101,28 +101,22 @@ class Blockchain:
 
         return newBlock.hash
 
-    def submitTx(self, tx: Tx) -> None:
+    def submitTx(self, tx: TxV2) -> None:
         """
         Submits a transaction to the pending transactions list.
 
         Args:
-            tx (Tx): The transaction to be submitted.
+            tx (TxV2): The transaction to be submitted.
 
         Raises:
             ValueError: If the transaction is not of type Tx.
         """
-        if not isinstance(tx, Tx):
+        if not isinstance(tx, TxV2):
             raise ValueError("Invalid transaction type. Expected Tx object.")
 
-        try:
-            if tx.validateSignature():
-                self.pendingTxs.append(tx)
-                logger.info('Transaction submitted: {}'.format(tx.hash.hex()))
-                return True
-        except Exception as e:
-            logger.error(
-                f'Error occurred while adding transaction to pending transactions: {e}')
-            return False
+        self.pendingTxs.append(tx)
+        logger.info('Transaction submitted: {}'.format(tx.hash.hex()))
+        return True
 
     def save(self):
         with open(self.db_filename, 'w') as f:
