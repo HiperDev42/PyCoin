@@ -94,6 +94,29 @@ class Blockchain:
             logger.error(f'Error occurred while reading blockchain data: {e}')
             return {}
 
+    def blockIndex(self, sorted=True) -> Dict[int, Block]:
+        index = {}
+        for block in self.data.values():
+            index[block.index] = block
+
+        if sorted:
+            return dict(sorted(index.items(), key=lambda item: item[0]))
+        return index
+
+    def getSnapshot(self):
+        blockIndex = self.blockIndex()
+
+        snapshot = {}
+
+        for block in blockIndex.values():
+            for tx in block.txs:
+                for tx_in in tx.tx_ins:
+                    snapshot.pop((tx_in.prevTx, tx_in.outIndex))
+                for tx_out_idx, tx_out in enumerate(tx.tx_outs):
+                    snapshot[(tx.hash, tx_out_idx)] = 1
+
+        return snapshot
+
     @property
     def last_block(self) -> Block:
         idx = -1
