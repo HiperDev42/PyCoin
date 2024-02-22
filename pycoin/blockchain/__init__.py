@@ -1,5 +1,5 @@
 from hashlib import sha256
-from pycoin.tx import Tx, TxV2
+from pycoin.tx import TxV2
 from pycoin.logs import logger
 from pycoin.utils import Encoder
 from Crypto.PublicKey import RSA
