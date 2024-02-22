@@ -1,48 +1,14 @@
-from hashlib import sha256
 from pycoin.tx import TxV2
 from pycoin.logs import logger
 from pycoin.utils import Encoder
 from Crypto.PublicKey import RSA
-from typing import Dict, get_type_hints, get_args, get_origin
+from typing import Dict
+from .block import Block
+from .blockchain_decoder import BlockchainDecoder
 import json
 import time
 
-
-class Block:
-    index: int  # the index of the block in the chain
-    timestamp: int  # timestamp of the block
-    prev: bytes  # 32 bytes hash to the previous block on chain
-    nonce: int  # nonce to solve the proof of work
-    txs: list[TxV2]  # list of transactions in the block
-
-    _json = ['index', 'timestamp', 'prev', 'nonce', 'txs']
-
-    def __init__(self, txs, timestamp, index, prev=b'\x00' * 32, nonce=0) -> None:
-        self.index = index
-        self.timestamp = timestamp
-        self.prev = prev
-        self.nonce = nonce
-        self.txs = txs
-
-    def mineBlock(self, difficulty=1) -> bool:
-        start = time.time()
-        while not self.validateHash(difficulty):
-            self.nonce += 1
-        end = time.time()
-        ellapsed = end - start
-
-        logger.debug("Block mined in {:.2f} seconds".format(ellapsed))
-        return True
-
-    def toJSON(self):
-        return json.dumps(self, cls=Encoder, sort_keys=True)
-
-    def validateHash(self, difficulty=4) -> bool:
-        return self.hash.startswith(b'\x00' * difficulty)
-
-    @property
-    def hash(self) -> bytes:
-        return sha256(self.toJSON().encode()).digest()
+__all__ = ["Blockchain", "Block"]
 
 
 class Blockchain:
@@ -153,48 +119,3 @@ class Blockchain:
         logger.debug('Adding new block to chain ({}: {})'.format(
             block.index, block.hash.hex()))
         self.blocks.append(block)
-
-
-class BlockchainDecoder(json.JSONDecoder):
-    def __init__(self, *args, **kwargs):
-        json.JSONDecoder.__init__(
-            self, *args, **kwargs)
-
-    def decode_class(self, value: any, cls) -> any:
-        cls_origin = get_origin(cls) or cls
-        if cls is bytes:
-            if not type(value) == str:
-                raise json.JSONDecodeError('Expected bytes')
-            return bytes.fromhex(value)
-
-        if cls is RSA.RsaKey:
-            return RSA.import_key(bytes.fromhex(value))
-
-        if cls_origin in {list, tuple}:
-            if not isinstance(value, list):
-                raise json.JSONDecodeError('Expected list')
-            sub_hint = get_args(cls)[0]
-            result = []
-            for item in value:
-                result.append(self.decode_class(item, cls=sub_hint))
-            return result
-
-        if isinstance(value, dict):
-            class_hints = get_type_hints(cls)
-            kwargs = {}
-            for key, val in value.items():
-                hint = class_hints[key]
-                kwargs[key] = self.decode_class(val, cls=hint)
-            obj = cls(**kwargs)
-            return obj
-
-        return value
-
-    def decode(self, s):
-        dct = super(BlockchainDecoder, self).decode(s)
-        result = {}
-
-        for key, value in dct.items():
-            result[key] = self.decode_class(value, cls=Block)
-
-        return result
