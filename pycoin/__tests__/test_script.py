@@ -12,13 +12,8 @@ def test_should_verify_signature():
     pub_hash = SHA256.new(pub_bytes).digest()
     signature = pkcs1_15.new(keys).sign(txid)
 
-    script = StackScript(txid)
-
-    script.push(signature)
-    script.push(pub_bytes)
-
-    script.op_dup()
-    script.op_hash160()
-    script.push(pub_hash)
-    script.op_equalverify()
-    script.op_checksig()
+    stack = [signature, pub_bytes]
+    script = ['OP_DUP', 'OP_HASH160', 'OP_PUSHDATA', pub_hash, 'OP_EQUALVERIFY',
+              'OP_CHECKSIG']
+    stackScript = StackScript(txid, script, stack)
+    stackScript.run()

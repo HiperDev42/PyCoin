@@ -11,15 +11,14 @@ from pydantic import BaseModel
 @dataclass
 class TxOut:
     amount: int
-    pubkey_hash: bytes
+    script: list[str | bytes]
 
 
 @dataclass
 class TxIn:
     txid: bytes
     outIndex: int
-    signature: bytes
-    pubkey: bytes
+    scriptSig: list[bytes]
 
 
 @dataclass
