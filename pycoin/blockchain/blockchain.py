@@ -1,7 +1,8 @@
-from pycoin.tx import TxV2
+from pycoin.tx import TxV2, TxIn, TxOut
 from pycoin.logs import logger
 from pycoin.utils import Encoder
-from Crypto.PublicKey import RSA
+from pycoin.script import Pay2PubHash
+from Crypto.Hash import SHA256
 from typing import Dict
 from .block import Block
 from .blockchain_decoder import BlockchainDecoder
@@ -42,13 +43,22 @@ class Blockchain:
         if self.__sync:
             self.save()
 
-    def minePendingTxs(self, miner: RSA.RsaKey) -> bytes:
+    def minePendingTxs(self, pubHash: SHA256.SHA256Hash) -> bytes:
         logger.debug('Transactions to mine {}'.format(len(self.pendingTxs)))
         logger.info('Mining block...')
-        txs = self.pendingTxs
-        self.pendingTxs = []
 
         last_block = self.last_block
+        last_height = last_block.index if last_block else -1
+
+        coinbase = TxV2(tx_ins=[
+            TxIn(b'\x00' * 32, 0, ['OP_PUSHDATA', last_height + 1])
+        ], tx_outs=[
+            TxOut(50, Pay2PubHash(pubHash)),
+        ])
+        assert coinbase.isCoinbase()
+
+        txs = [coinbase] + self.pendingTxs
+        self.pendingTxs = []
 
         index = 0
         if last_block:
@@ -77,6 +87,8 @@ class Blockchain:
         """
         if not isinstance(tx, TxV2):
             raise ValueError("Invalid transaction type. Expected Tx object.")
+        if tx.isCoinbase():
+            raise ValueError("Cannot submit coinbase transaction.")
 
         self.pendingTxs.append(tx)
         logger.info('Transaction submitted: {}'.format(tx.hash.hex()))

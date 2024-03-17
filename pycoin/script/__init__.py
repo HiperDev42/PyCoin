@@ -8,13 +8,18 @@ def calc_hash(data: bytes):
     return SHA256.new(data).digest()
 
 
+def Pay2PubHash(pub_hash: SHA256.SHA256Hash):
+    return ['OP_DUP', 'OP_HASH160', 'OP_PUSHDATA', pub_hash.digest(), 'OP_EQUALVERIFY',
+            'OP_CHECKSIG']
+
+
 class StackScript:
-    txid: SHA256
+    txid: SHA256.SHA256Hash
     stack: list[bytes] = []
     script: list[str | bytes] = []
     pointer: int = 0
 
-    def __init__(self, txid: SHA256, script: list[str], stack: list[bytes]) -> None:
+    def __init__(self, txid: SHA256.SHA256Hash, script: list[str], stack: list[bytes]) -> None:
         self.txid = txid
         self.stack = stack
         self.script = script

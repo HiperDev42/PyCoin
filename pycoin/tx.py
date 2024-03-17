@@ -11,14 +11,14 @@ from pydantic import BaseModel
 @dataclass
 class TxOut:
     amount: int
-    script: list[str | bytes]
+    script: list[str]
 
 
 @dataclass
 class TxIn:
     txid: bytes
     outIndex: int
-    scriptSig: list[bytes]
+    scriptSig: list[str]
 
 
 @dataclass
