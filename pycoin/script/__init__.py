@@ -1,6 +1,7 @@
 from Crypto.Hash import SHA256
 from Crypto.PublicKey import RSA
 from Crypto.Signature import pkcs1_15
+from pycoin.logs import logger
 
 
 def calc_hash(data: bytes):
@@ -36,7 +37,9 @@ class StackScript:
             op = self.eat()
             if not isinstance(op, str) or op not in self.OP_CODES:
                 raise ValueError("Invalid opcode")
-            self.OP_CODES[op](self)
+            action = self.OP_CODES[op]
+            logger.debug(f'Running {op}')
+            action(self)
 
         self.op_verify()
 
