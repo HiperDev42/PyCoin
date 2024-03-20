@@ -16,14 +16,20 @@ def Pay2PubHash(pub_hash: SHA256.SHA256Hash):
 class StackScript:
     txid: SHA256.SHA256Hash
     stack: list[bytes] = []
-    script: list[str | bytes] = []
+    script: list[str] = []
     pointer: int = 0
 
-    def __init__(self, txid: SHA256.SHA256Hash, script: list[str], stack: list[bytes]) -> None:
+    def __init__(self, txid: SHA256.SHA256Hash, script: list[str], stack: list[str | bytes]) -> None:
         self.txid = txid
-        self.stack = stack
         self.script = script
         self.pointer = 0
+
+        self.stack = []
+        for item in stack:
+            if isinstance(item, str):
+                self.stack.append(bytes.fromhex(item))
+            else:
+                self.stack.append(item)
 
     def seek(self, position: int):
         if position > len(self.script):

@@ -2,6 +2,7 @@ from pycoin.tx import TxV2, TxIn, TxOut
 from pycoin.logs import logger
 from pycoin.utils import Encoder
 from pycoin.script import Pay2PubHash
+from pycoin.validator import Validator
 from Crypto.Hash import SHA256
 from typing import Dict
 from .block import Block
@@ -76,19 +77,13 @@ class Blockchain:
         return newBlock.hash
 
     def submitTx(self, tx: TxV2) -> None:
-        """
-        Submits a transaction to the pending transactions list.
-
-        Args:
-            tx (TxV2): The transaction to be submitted.
-
-        Raises:
-            ValueError: If the transaction is not of type Tx.
-        """
         if not isinstance(tx, TxV2):
             raise ValueError("Invalid transaction type. Expected Tx object.")
         if tx.isCoinbase():
-            raise ValueError("Cannot submit coinbase transaction.")
+            raise ValueError("Cannot submit coinbase transaction to mempool.")
+
+        validator = Validator(self)
+        validator.validate_tx(tx)
 
         self.pendingTxs.append(tx)
         logger.info('Transaction submitted: {}'.format(tx.hash.hex()))
@@ -141,3 +136,16 @@ class Blockchain:
         logger.debug('Adding new block to chain ({}: {})'.format(
             block.index, block.hash.hex()))
         self.blocks.append(block)
+
+    def getTxById(self, txid: SHA256.SHA256Hash) -> TxV2 | None:
+        for block in self.blocks:
+            for tx in block.txs:
+                if tx.hash == txid:
+                    return tx
+        return None
+
+    def findUTXO(self, txid: SHA256.SHA256Hash, outIndex: int):
+        prev_tx = self.getTxById(txid)
+        if not prev_tx or outIndex < len(prev_tx.tx_outs):
+            raise ValueError("Unknown UTXO.")
+        return prev_tx.tx_outs[outIndex]

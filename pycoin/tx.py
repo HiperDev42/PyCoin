@@ -34,7 +34,7 @@ class TxV2:
 
     @property
     def hash(self):
-        return self.__hash().digest()
+        return self.__hash()
 
     def isCoinbase(self):
         return len(self.tx_ins) == 1 and self.tx_ins[0].txid == b'\x00' * 32
