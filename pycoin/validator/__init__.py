@@ -1,4 +1,4 @@
-from pycoin.tx import TxV2
+from pycoin.tx import Tx
 from pycoin.script import StackScript
 from typing import TYPE_CHECKING
 
@@ -12,7 +12,7 @@ class Validator:
     def __init__(self, blockchain: 'Blockchain') -> None:
         self.blockchain = blockchain
 
-    def validate_tx(self, tx: TxV2):
+    def validate_tx(self, tx: Tx):
         # Check if tx has inputs and outputs
         assert len(tx.tx_ins) > 0 and len(tx.tx_outs) > 0
 

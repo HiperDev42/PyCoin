@@ -1,4 +1,4 @@
-from pycoin.tx import TxV2, TxIn, TxOut
+from pycoin.tx import Tx, TxIn, TxOut
 from pycoin.logs import logger
 from pycoin.utils import Encoder
 from pycoin.script import Pay2PubHash
@@ -14,7 +14,7 @@ import time
 
 class Blockchain:
     blocks: list[Block]
-    pendingTxs: list[TxV2]
+    pendingTxs: list[Tx]
     difficulty: int = 1
     reward: int
     db_filename: str
@@ -52,7 +52,7 @@ class Blockchain:
         last_block = self.last_block
         last_height = last_block.index if last_block else -1
 
-        coinbase = TxV2(tx_ins=[
+        coinbase = Tx(tx_ins=[
             TxIn(b'\x00' * 32, 0,
                  [(last_height + 1).to_bytes(4, byteorder='big')])
         ], tx_outs=[
@@ -78,8 +78,8 @@ class Blockchain:
 
         return newBlock.hash
 
-    def submitTx(self, tx: TxV2) -> None:
-        if not isinstance(tx, TxV2):
+    def submitTx(self, tx: Tx) -> None:
+        if not isinstance(tx, Tx):
             raise ValueError("Invalid transaction type. Expected Tx object.")
         if tx.isCoinbase():
             raise ValueError("Cannot submit coinbase transaction to mempool.")
@@ -157,7 +157,7 @@ class Blockchain:
             block.index, block.hash.hex()))
         self.blocks.append(block)
 
-    def getTxById(self, txid: bytes) -> TxV2 | None:
+    def getTxById(self, txid: bytes) -> Tx | None:
         for block in self:
             for tx in block.txs:
                 if tx.hash.digest() == txid:

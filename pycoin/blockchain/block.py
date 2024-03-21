@@ -1,5 +1,5 @@
 from hashlib import sha256
-from pycoin.tx import TxV2
+from pycoin.tx import Tx
 from pycoin.logs import logger
 from pycoin.utils import Encoder
 import json
@@ -11,7 +11,7 @@ class Block:
     timestamp: int  # timestamp of the block
     prev: bytes  # 32 bytes hash to the previous block on chain
     nonce: int  # nonce to solve the proof of work
-    txs: list[TxV2]  # list of transactions in the block
+    txs: list[Tx]  # list of transactions in the block
 
     _json = ['index', 'timestamp', 'prev', 'nonce', 'txs']
 

@@ -1,11 +1,11 @@
-from pycoin.tx import TxV2, TxOut
+from pycoin.tx import Tx, TxOut
 from dataclasses import dataclass
 
 
 @dataclass
 class Coin:
     height: int
-    tx: TxV2
+    tx: Tx
     outIndex: int
 
     @property

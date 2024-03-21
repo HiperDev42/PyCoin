@@ -1,7 +1,7 @@
 from Crypto.Hash import SHA256
 from Crypto.PublicKey import RSA
 from Crypto.Signature import pkcs1_15
-from pycoin.tx import TxV2, TxIn, TxOut
+from pycoin.tx import Tx, TxIn, TxOut
 from pycoin.blockchain.coin import Coin
 from typing import TYPE_CHECKING
 import os
@@ -65,7 +65,7 @@ class Wallet:
 
         return balance
 
-    def createTx(self, receiver: list[str], amount: int) -> TxV2:
+    def createTx(self, receiver: list[str], amount: int) -> Tx:
         coins = self.getUTXOs()
 
         tx_ins: list[TxIn] = []
@@ -86,7 +86,7 @@ class Wallet:
         if balance > 0:
             tx_outs.append(TxOut(balance, self.get_p2pkh_address()))
 
-        tx = TxV2(tx_ins, tx_outs)
+        tx = Tx(tx_ins, tx_outs)
 
         return tx
 
