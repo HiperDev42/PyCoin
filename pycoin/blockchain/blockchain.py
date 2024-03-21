@@ -7,6 +7,7 @@ from Crypto.Hash import SHA256
 from typing import Dict
 from .block import Block
 from .blockchain_decoder import BlockchainDecoder
+from .coin import Coin
 import json
 import time
 
@@ -111,16 +112,17 @@ class Blockchain:
             return dict(sorted(index.items(), key=lambda item: item[0]))
         return index
 
-    def getSnapshot(self):
+    def getSnapshot(self) -> Dict[tuple[str, int], Coin]:
         chain = self.blockIndex()
-        snapshot: Dict[tuple[str, int], TxOut] = {}
+        snapshot: Dict[tuple[str, int], Coin] = {}
         for height, block in chain.items():
             for tx in block.txs:
                 if not tx.isCoinbase():
                     for tx_in in tx.tx_ins:
                         del snapshot[(tx_in.txid.hex(), tx_in.outIndex)]
                 for outIndex, tx_out in enumerate(tx.tx_outs):
-                    snapshot[(tx.hash.hexdigest(), outIndex)] = tx_out
+                    snapshot[(tx.hash.hexdigest(), outIndex)] = Coin(
+                        height=height, tx=tx, outIndex=outIndex)
 
         return snapshot
 
