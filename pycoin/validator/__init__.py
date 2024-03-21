@@ -19,6 +19,7 @@ class Validator:
         if tx.isCoinbase():
             return
 
+        balance = 0
         # Validate inputs
         for tx_in in tx.tx_ins:
             unlock_script = tx_in.scriptSig
@@ -27,3 +28,11 @@ class Validator:
 
             script = StackScript(tx_in.txid, lock_script, unlock_script)
             script.run()
+
+            balance += utxo.amount
+
+        # Validate outputs
+        for tx_out in tx.tx_outs:
+            assert tx_out.amount > 0
+            assert balance >= tx_out.amount
+            balance -= tx_out.amount
