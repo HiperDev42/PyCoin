@@ -9,17 +9,17 @@ def calc_hash(data: bytes):
 
 
 def Pay2PubHash(pub_hash: SHA256.SHA256Hash):
-    return ['OP_DUP', 'OP_HASH160', 'OP_PUSHDATA', pub_hash.digest(), 'OP_EQUALVERIFY',
+    return ['OP_DUP', 'OP_HASH160', 'OP_PUSHDATA', pub_hash.hexdigest(), 'OP_EQUALVERIFY',
             'OP_CHECKSIG']
 
 
 class StackScript:
-    txid: SHA256.SHA256Hash
+    txid: bytes
     stack: list[bytes] = []
     script: list[str] = []
     pointer: int = 0
 
-    def __init__(self, txid: SHA256.SHA256Hash, script: list[str], stack: list[str | bytes]) -> None:
+    def __init__(self, txid: bytes, script: list[str], stack: list[str | bytes]) -> None:
         self.txid = txid
         self.script = script
         self.pointer = 0
@@ -77,13 +77,13 @@ class StackScript:
 
     def op_pushdata(self):
         data = self.eat()
-        self.stack.append(data)
+        self.stack.append(bytes.fromhex(data))
 
     def op_checksig(self):
         pub = RSA.import_key(self.stack.pop())
         sig = self.stack.pop()
         try:
-            pkcs1_15.new(pub).verify(self.txid, sig)
+            pkcs1_15.new(pub).verify(SHA256.new(self.txid), sig)
         except ValueError:
             self.stack.append(b'\x00')
         else:

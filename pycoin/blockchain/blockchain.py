@@ -52,7 +52,8 @@ class Blockchain:
         last_height = last_block.index if last_block else -1
 
         coinbase = TxV2(tx_ins=[
-            TxIn(b'\x00' * 32, 0, ['OP_PUSHDATA', last_height + 1])
+            TxIn(b'\x00' * 32, 0,
+                 [(last_height + 1).to_bytes(4, byteorder='big')])
         ], tx_outs=[
             TxOut(50, Pay2PubHash(pubHash)),
         ])
@@ -86,7 +87,7 @@ class Blockchain:
         validator.validate_tx(tx)
 
         self.pendingTxs.append(tx)
-        logger.info('Transaction submitted: {}'.format(tx.hash.hex()))
+        logger.info('Transaction submitted: {}'.format(tx.hash.hexdigest()))
         return True
 
     def save(self):
@@ -113,6 +114,13 @@ class Blockchain:
     def getSnapshot(self):
         pass
 
+    def __iter__(self):
+        block_hash = self.last_hash.hex()
+        while block_hash and block_hash != '00' * 32:
+            block = self.data[block_hash]
+            yield block
+            block_hash = block.prev.hex()
+
     @property
     def last_block(self) -> Block:
         idx = -1
@@ -137,15 +145,15 @@ class Blockchain:
             block.index, block.hash.hex()))
         self.blocks.append(block)
 
-    def getTxById(self, txid: SHA256.SHA256Hash) -> TxV2 | None:
-        for block in self.blocks:
+    def getTxById(self, txid: bytes) -> TxV2 | None:
+        for block in self:
             for tx in block.txs:
-                if tx.hash == txid:
+                if tx.hash.digest() == txid:
                     return tx
         return None
 
-    def findUTXO(self, txid: SHA256.SHA256Hash, outIndex: int):
+    def findUTXO(self, txid: bytes, outIndex: int):
         prev_tx = self.getTxById(txid)
-        if not prev_tx or outIndex < len(prev_tx.tx_outs):
+        if not prev_tx or outIndex >= len(prev_tx.tx_outs):
             raise ValueError("Unknown UTXO.")
         return prev_tx.tx_outs[outIndex]

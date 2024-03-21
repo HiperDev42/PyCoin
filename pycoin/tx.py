@@ -18,7 +18,7 @@ class TxOut:
 class TxIn:
     txid: bytes
     outIndex: int
-    scriptSig: list[str]
+    scriptSig: list[bytes]
 
 
 @dataclass
