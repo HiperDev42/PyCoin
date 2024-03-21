@@ -3,6 +3,7 @@ from Crypto.PublicKey import RSA
 from Crypto.Signature import pkcs1_15
 import pycoin
 import pycoin.tx
+import pycoin.script
 from pycoin.logs import logger
 
 
@@ -56,7 +57,9 @@ def test_should_mine_a_block_with_txs():
         ],
         tx_outs=[
             pycoin.tx.TxOut(10, pycoin.script.Pay2PubHash(
-                getPubKeyHash(bobKey)))
+                getPubKeyHash(bobKey))),
+            pycoin.tx.TxOut(40, pycoin.script.Pay2PubHash(
+                getPubKeyHash(aliceKey)))
         ]
     )
     blockchain.submitTx(tx)
@@ -64,3 +67,26 @@ def test_should_mine_a_block_with_txs():
     blockchain.minePendingTxs(minerPubHash)
 
     blockchain.save()
+
+
+def test_snapshot():
+    aliceKey = create_if_not_exists('alice.pem')
+    bobKey = create_if_not_exists('bob.pem')
+
+    alicePubKeyScript = pycoin.script.Pay2PubHash(getPubKeyHash(aliceKey))
+    bobPubKeyScript = pycoin.script.Pay2PubHash(getPubKeyHash(bobKey))
+
+    blockchain = pycoin.Blockchain()
+    snapshot = blockchain.getSnapshot()
+
+    balance_alice = 0
+    balance_bob = 0
+    for txout in snapshot.values():
+        if txout.script == alicePubKeyScript:
+            balance_alice += txout.amount
+        elif txout.script == bobPubKeyScript:
+            balance_bob += txout.amount
+
+    logger.info(snapshot)
+    logger.info(f'Alice: {balance_alice}')
+    logger.info(f'Bob: {balance_bob}')
