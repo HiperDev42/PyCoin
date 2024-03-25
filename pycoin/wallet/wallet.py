@@ -10,6 +10,10 @@ if TYPE_CHECKING:
     from pycoin import Blockchain
 
 
+class InsuffitientFunds(Exception):
+    ...
+
+
 def Pay2PubHash(pub_hash: SHA256.SHA256Hash) -> list[str]:
     return ['OP_DUP', 'OP_HASH160', 'OP_PUSHDATA', pub_hash.hexdigest(), 'OP_EQUALVERIFY',
             'OP_CHECKSIG']
@@ -78,7 +82,7 @@ class Wallet:
             if balance >= amount:
                 break
         else:
-            raise Exception("Insufficient funds")
+            raise InsuffitientFunds()
 
         tx_outs.append(TxOut(amount, receiver))
         balance -= amount
