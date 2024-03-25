@@ -27,7 +27,7 @@ class Validator:
             prev_tx = self.blockchain.getTxById(tx_in.txid)
             lock_script = utxo.script
 
-            result = Eval(unlock_script, lock_script, prev_tx)
+            result = Eval(unlock_script.copy(), lock_script, prev_tx)
             assert len(result.stack) == 1
             assert result.stack[0] == b'\x01'
 
