@@ -90,3 +90,5 @@ def Eval(stack: List[bytes], scriptIn: Script, tx: Tx):
             raise EvalScriptError("unsupported opcode 0x%x" % opcode)
 
         action(state)
+
+    return state

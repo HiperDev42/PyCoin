@@ -1,6 +1,10 @@
-from collections.abc import Iterator
-from typing import Generator, Tuple, Optional
+from Crypto.PublicKey import RSA
+from typing import Generator, Iterable, Tuple, Type, Optional, Union
 from .opcodes import *
+from pycoin import NotImplementedError
+
+
+ScriptElement_Type = Union[ScriptOp, int, bytes, bytearray]
 
 
 class ScriptInvalidError(Exception):
@@ -8,6 +12,42 @@ class ScriptInvalidError(Exception):
 
 
 class Script(bytes):
+    @classmethod
+    def __coerce_instance(cls, other: ScriptElement_Type) -> bytes:
+        if isinstance(other, ScriptOp):
+            other = bytes([other])
+        elif isinstance(other, int):
+            if 0 <= other <= 16:
+                other = ScriptOp.encode_op_n(other)
+            elif other == -1:
+                other = bytes([OP_1NEGATE])
+            else:
+                raise NotImplementedError()
+        elif isinstance(other, (bytes, bytearray)):
+            other = ScriptOp.encode_op_pushdata(other)
+        else:
+            raise TypeError(
+                "Unsupported type for script element: %s" % type(other))
+        return other
+
+    def __new__(cls, value: Type[ScriptElement_Type] = b'', *, name: Optional[str] = None) -> 'Script':
+        if isinstance(value, (bytes, bytearray)):
+            instance = super().__new__(cls, value)
+        else:
+            def coerce_iterable(iterable: Iterable[ScriptElement_Type]) -> Generator[bytes, None, None]:
+                for instance in iterable:
+                    yield cls.__coerce_instance(instance)
+
+            # Annoyingly bytes.join() always
+            # returns a bytes instance even when subclassed.
+            instance = super().__new__(
+                cls, b''.join(coerce_iterable(value)))
+        if name is not None:
+            if not isinstance(name, str):
+                raise ValueError("name must be a string")
+            instance._script_name = name
+        return instance
+
     def raw_iter(self) -> Generator[Tuple[ScriptOp, Optional[bytes], int], None, None]:
         i = 0
         while i < len(self):
@@ -58,7 +98,7 @@ class Script(bytes):
 
                 yield (ScriptOp(opcode), data, sop_idx)
 
-    def __iter__(self) -> Iterator[int]:
+    def __iter__(self) -> Iterable[int]:
         for (opcode, data, sop_idx) in self.raw_iter():
             if opcode == OP_0:
                 yield 0

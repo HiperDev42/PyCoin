@@ -1,9 +1,30 @@
-from typing import List
+from typing import List, Union
 
 _opcode_instances: List['ScriptOp'] = []
 
 
 class ScriptOp(int):
+    @staticmethod
+    def encode_op_pushdata(d: Union[bytes, bytearray]) -> bytes:
+        if len(d) < OP_PUSHDATA1:
+            return b'' + bytes([len(d)]) + d
+        elif len(d) < 0xff:
+            return bytes([OP_PUSHDATA1]) + bytes([len(d)]) + d
+        elif len(d) < 0xffff:
+            return bytes([OP_PUSHDATA2]) + int.to_bytes(len(d), 2, 'big') + d
+        elif len(d) < 0xffffffff:
+            return bytes([OP_PUSHDATA4]) + int.to_bytes(len(d), 4, 'big') + d
+        else:
+            raise ValueError("Data too long to encode in a PUSHDATA")
+
+    @staticmethod
+    def encode_op_n(d: int) -> bytes:
+        if not (0 <= d <= 16):
+            raise ValueError("OP_N must be in range 0 <= n <= 16")
+        if d == 0:
+            return bytes([OP_0])
+        return bytes([OP_1 + d - 1])
+
     def decode_op_n(self) -> int:
         if self == 0:
             return 0
