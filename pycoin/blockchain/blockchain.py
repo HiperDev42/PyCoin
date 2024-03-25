@@ -3,7 +3,6 @@ from pycoin.logs import logger
 from pycoin.utils import Encoder
 from pycoin.script import Script
 from pycoin.validator import Validator
-from Crypto.Hash import SHA256
 from typing import Dict
 from .block import Block
 from .blockchain_decoder import BlockchainDecoder
