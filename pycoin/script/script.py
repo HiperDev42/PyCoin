@@ -1,5 +1,5 @@
 from collections.abc import Iterator
-from typing import Generator, List, Tuple, Optional
+from typing import Generator, Tuple, Optional
 from .opcodes import *
 
 
@@ -69,3 +69,12 @@ class Script(bytes):
                     yield opcode.decode_op_n()
                 else:
                     yield opcode
+
+    def is_p2pkh(self) -> bool:
+        """Checks if the script is a pay-to-pubkey-hash script."""
+        return (len(self)) == 25 \
+            and self[0] == OP_DUP \
+            and self[1] == OP_HASH160 \
+            and self[2] == 0x14 \
+            and self[23] == OP_EQUALVERIFY \
+            and self[24] == OP_CHECKSIG

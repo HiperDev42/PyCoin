@@ -175,3 +175,8 @@ OP_PUBKEYHASH = ScriptOp(0xfd)
 OP_PUBKEY = ScriptOp(0xfe)
 
 OP_INVALIDOPCODE = ScriptOp(0xff)
+
+DISABLED_OPCODES = frozenset((OP_VERIF, OP_VERNOTIF,
+                              OP_CAT, OP_SUBSTR, OP_LEFT, OP_RIGHT, OP_INVERT, OP_AND,
+                              OP_OR, OP_XOR, OP_2MUL, OP_2DIV, OP_MUL, OP_DIV, OP_MOD,
+                              OP_LSHIFT, OP_RSHIFT))
