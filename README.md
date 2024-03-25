@@ -1,2 +1,3 @@
 # PyCoin
-A simple python cryptocurrency
+
+A simple Python cryptocurrency
