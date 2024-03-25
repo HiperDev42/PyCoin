@@ -5,7 +5,7 @@ from typing import Callable, Dict, List, TYPE_CHECKING
 from dataclasses import dataclass
 from .script import Script
 from .opcodes import *
-from pycoin.utils import hash160
+from pycoin.logs import logger
 if TYPE_CHECKING:
     from pycoin.tx import Tx
 
@@ -67,6 +67,7 @@ def eval_OP_CHECKSIG(state: EvalState):
     pubkey = RSA.import_key(state.stack.pop())
     sig = state.stack.pop()
     txid_hash = SHA256.new(state.tx.hash.digest())
+    logger.debug(txid_hash.hexdigest())
     try:
         pkcs1_15.new(pubkey).verify(txid_hash, sig)
     except ValueError:

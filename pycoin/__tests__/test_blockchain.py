@@ -40,10 +40,10 @@ def test_should_mine_a_block_with_txs():
     aliceKey = create_if_not_exists('alice.pem')
     alicePubKey = aliceKey.public_key().export_key('DER')
     bobKey = create_if_not_exists('bob.pem')
-    minerPubHash = getPubKeyHash(aliceKey)
+    miner_address = get_p2pkh_address(aliceKey)
 
     blockchain = pycoin.Blockchain()
-    block_hash = blockchain.minePendingTxs(minerPubHash)
+    block_hash = blockchain.minePendingTxs(miner_address)
     block = blockchain.data[block_hash.hex()]
 
     prev_tx = block.txs[0]
@@ -59,14 +59,12 @@ def test_should_mine_a_block_with_txs():
                            signature, alicePubKey])
         ],
         tx_outs=[
-            pycoin.tx.TxOut(10, pycoin.script.Pay2PubHash(
-                getPubKeyHash(bobKey))),
-            pycoin.tx.TxOut(40, pycoin.script.Pay2PubHash(
-                getPubKeyHash(aliceKey)))
+            pycoin.tx.TxOut(10, get_p2pkh_address(bobKey)),
+            pycoin.tx.TxOut(40, get_p2pkh_address(aliceKey))
         ]
     )
     blockchain.submitTx(tx)
 
-    blockchain.minePendingTxs(minerPubHash)
+    blockchain.minePendingTxs(miner_address)
 
     blockchain.save()

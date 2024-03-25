@@ -9,9 +9,6 @@ def hash160(data: bytes):
 
 class Encoder(json.JSONEncoder):
     def default(self, obj):
-        from pycoin.script import Script
-        if isinstance(obj, Script):
-            print('ok')
         if issubclass(type(obj), bytes):
             return obj.hex()
         if isinstance(obj, RSA.RsaKey):

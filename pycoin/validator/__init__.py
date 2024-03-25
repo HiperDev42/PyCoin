@@ -24,9 +24,10 @@ class Validator:
         for tx_in in tx.tx_ins:
             unlock_script = tx_in.scriptSig
             utxo = self.blockchain.findUTXO(tx_in.txid, tx_in.outIndex)
+            prev_tx = self.blockchain.getTxById(tx_in.txid)
             lock_script = utxo.script
 
-            result = Eval(unlock_script, lock_script, tx)
+            result = Eval(unlock_script, lock_script, prev_tx)
             assert len(result.stack) == 1
             assert result.stack[0] == b'\x01'
 
