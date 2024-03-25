@@ -8,7 +8,7 @@ class ScriptInvalidError(Exception):
 
 
 class Script(bytes):
-    def __raw_iter(self) -> Generator[Tuple[ScriptOp, Optional[bytes], int], None, None]:
+    def raw_iter(self) -> Generator[Tuple[ScriptOp, Optional[bytes], int], None, None]:
         i = 0
         while i < len(self):
             sop_idx = i
@@ -59,7 +59,7 @@ class Script(bytes):
                 yield (ScriptOp(opcode), data, sop_idx)
 
     def __iter__(self) -> Iterator[int]:
-        for (opcode, data, sop_idx) in self.__raw_iter():
+        for (opcode, data, sop_idx) in self.raw_iter():
             if opcode == OP_0:
                 yield 0
             elif data is not None:
