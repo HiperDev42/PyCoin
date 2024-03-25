@@ -1,11 +1,13 @@
 from Crypto.Hash import RIPEMD160, SHA256
 from Crypto.PublicKey import RSA
 from Crypto.Signature import pkcs1_15
-from typing import Callable, Dict, List
+from typing import Callable, Dict, List, TYPE_CHECKING
 from dataclasses import dataclass
 from .script import Script
 from .opcodes import *
-from pycoin.tx import Tx
+from pycoin.utils import hash160
+if TYPE_CHECKING:
+    from pycoin.tx import Tx
 
 _opcode_evals: Dict[ScriptOp, Callable] = {}
 
@@ -17,7 +19,7 @@ class EvalScriptError(Exception):
 @dataclass
 class EvalState:
     stack: List[bytes]
-    tx: Tx
+    tx: 'Tx'
 
 
 def register(opcode: ScriptOp):
@@ -73,7 +75,7 @@ def eval_OP_CHECKSIG(state: EvalState):
         state.stack.append(b'\x01')
 
 
-def Eval(stack: List[bytes], scriptIn: Script, tx: Tx):
+def Eval(stack: List[bytes], scriptIn: Script, tx: 'Tx'):
     state = EvalState(stack=stack, tx=tx)
     for (opcode, data, sop_idx) in scriptIn.raw_iter():
         if opcode in DISABLED_OPCODES:

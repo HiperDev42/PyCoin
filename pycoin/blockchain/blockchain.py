@@ -1,7 +1,7 @@
 from pycoin.tx import Tx, TxIn, TxOut
 from pycoin.logs import logger
 from pycoin.utils import Encoder
-from pycoin.script import Pay2PubHash
+from pycoin.script import Script
 from pycoin.validator import Validator
 from Crypto.Hash import SHA256
 from typing import Dict
@@ -45,7 +45,7 @@ class Blockchain:
         if self.__sync:
             self.save()
 
-    def minePendingTxs(self, pubHash: SHA256.SHA256Hash) -> bytes:
+    def minePendingTxs(self, scriptSig: Script) -> bytes:
         logger.debug('Transactions to mine {}'.format(len(self.pendingTxs)))
         logger.info('Mining block...')
 
@@ -56,7 +56,7 @@ class Blockchain:
             TxIn(b'\x00' * 32, 0,
                  [(last_height + 1).to_bytes(4, byteorder='big')])
         ], tx_outs=[
-            TxOut(50, Pay2PubHash(pubHash)),
+            TxOut(50, scriptSig),
         ])
         assert coinbase.isCoinbase()
 

@@ -1,7 +1,6 @@
 from Crypto.PublicKey import RSA
 from typing import Generator, Iterable, Tuple, Type, Optional, Union
 from .opcodes import *
-from pycoin import NotImplementedError
 
 
 ScriptElement_Type = Union[ScriptOp, int, bytes, bytearray]

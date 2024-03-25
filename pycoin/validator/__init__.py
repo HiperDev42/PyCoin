@@ -1,5 +1,5 @@
 from pycoin.tx import Tx
-from pycoin.script import StackScript
+from pycoin.script import Script, Eval
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -26,8 +26,9 @@ class Validator:
             utxo = self.blockchain.findUTXO(tx_in.txid, tx_in.outIndex)
             lock_script = utxo.script
 
-            script = StackScript(tx_in.txid, lock_script, unlock_script)
-            script.run()
+            result = Eval(unlock_script, lock_script, tx)
+            assert len(result.stack) == 1
+            assert result.stack[0] == b'\x01'
 
             balance += utxo.amount
 

@@ -1,17 +1,14 @@
 import pycoin.utils as utils
-from pycoin.logs import logger
+from pycoin.script import Script
 import json
 from Crypto.Hash import SHA256
-from Crypto.PublicKey import RSA
-from Crypto.Signature import pkcs1_15
 from dataclasses import dataclass
-from pydantic import BaseModel
 
 
 @dataclass
 class TxOut:
     amount: int
-    script: list[str]
+    script: Script
 
 
 @dataclass

@@ -4,7 +4,9 @@ from Crypto.Signature import pkcs1_15
 import pycoin
 import pycoin.tx
 import pycoin.script
+from pycoin.utils import hash160
 from pycoin.logs import logger
+from pycoin.script import Script, OP_DUP, OP_HASH160, OP_EQUALVERIFY, OP_CHECKSIG
 
 
 def create_if_not_exists(filename: str):
@@ -18,17 +20,18 @@ def create_if_not_exists(filename: str):
         return key
 
 
-def getPubKeyHash(key: RSA.RsaKey):
-    return SHA256.new(key.public_key().export_key('DER'))
+def get_p2pkh_address(key: RSA.RsaKey):
+    return Script([OP_DUP, OP_HASH160, hash160(
+        key.public_key().export_key('DER')), OP_EQUALVERIFY, OP_CHECKSIG])
 
 
 def test_should_mine_empty_block():
     key = create_if_not_exists('alice.pem')
-    pubHash = getPubKeyHash(key)
+
+    payScript = get_p2pkh_address(key)
 
     blockchain = pycoin.Blockchain()
-
-    blockchain.minePendingTxs(pubHash)
+    blockchain.minePendingTxs(payScript)
 
     blockchain.save()
 

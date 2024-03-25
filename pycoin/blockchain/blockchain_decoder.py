@@ -11,10 +11,11 @@ class BlockchainDecoder(json.JSONDecoder):
 
     def decode_class(self, value: any, cls) -> any:
         cls_origin = get_origin(cls) or cls
-        if cls is bytes:
+        if issubclass(cls, bytes):
             if not type(value) == str:
                 raise json.JSONDecodeError('Expected bytes')
-            return bytes.fromhex(value)
+            bval = bytes.fromhex(value)
+            return cls(bval)
 
         if cls is RSA.RsaKey:
             return RSA.import_key(bytes.fromhex(value))

@@ -1,10 +1,18 @@
 import json
+from Crypto.Hash import RIPEMD160, SHA256
 from Crypto.PublicKey import RSA
+
+
+def hash160(data: bytes):
+    return RIPEMD160.new(SHA256.new(data).digest()).digest()
 
 
 class Encoder(json.JSONEncoder):
     def default(self, obj):
-        if isinstance(obj, bytes):
+        from pycoin.script import Script
+        if isinstance(obj, Script):
+            print('ok')
+        if issubclass(type(obj), bytes):
             return obj.hex()
         if isinstance(obj, RSA.RsaKey):
             return obj.export_key('DER').hex()
