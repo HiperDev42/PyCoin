@@ -1,10 +1,11 @@
 import pycoin
+import pycoin.script
 import pycoin.wallet
 import click
 import colorama
 from typing import BinaryIO
 from Crypto.PublicKey import RSA
-from base64 import b64encode, b64decode
+from pycoin.logs import logger
 
 
 blockchain = pycoin.Blockchain('blockchain.db.json')
@@ -27,7 +28,7 @@ def create_wallet(key_file: BinaryIO):
 
 
 @app.group()
-@click.option('--key', required=True, help='Key filename')
+@click.option('--key', '-k', default='wallet.pem', help='Key filename')
 @click.pass_context
 def wallet(ctx, key: str):
     wallet = pycoin.wallet.Wallet(key, blockchain)
@@ -44,9 +45,8 @@ def balance(wallet: pycoin.wallet.Wallet):
 @wallet.command()
 @click.pass_obj
 def get_address(wallet: pycoin.wallet.Wallet):
-    address = ','.join(wallet.get_p2pkh_address())
-    encoded = b64encode(address.encode())
-    click.echo(encoded)
+    addr = wallet.get_p2pkh_address()
+    click.echo(addr.hex())
 
 
 @wallet.command()
@@ -54,7 +54,7 @@ def get_address(wallet: pycoin.wallet.Wallet):
 @click.argument('amount')
 @click.pass_obj
 def create_tx(wallet: pycoin.wallet.Wallet, receiver: str, amount: int):
-    receiver_address = b64decode(receiver.encode()).decode().split(',')
+    receiver_address = pycoin.script.Script(bytes.fromhex(receiver))
     try:
         tx = wallet.createTx(receiver=receiver_address, amount=amount)
     except pycoin.wallet.InsuffitientFunds:

@@ -66,7 +66,7 @@ class Wallet:
 
         return balance
 
-    def createTx(self, receiver: list[str], amount: int) -> Tx:
+    def createTx(self, receiver: Script, amount: int) -> Tx:
         coins = self.getUTXOs()
 
         tx_ins: list[TxIn] = []
