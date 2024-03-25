@@ -26,7 +26,8 @@ def test_p2pkh_eval():
 
     txid_hash = get_txid_hash(tx)
     signature = pkcs1_15.new(keyPair).sign(txid_hash)
-    script = Script()
+    script = Script([OP_DUP, OP_HASH160, pubkey_hash,
+                    OP_EQUALVERIFY, OP_CHECKSIG])
 
     stack = [signature, pubkey_bytes]
 
