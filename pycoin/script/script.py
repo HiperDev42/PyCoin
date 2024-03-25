@@ -117,3 +117,8 @@ class Script(bytes):
             and self[2] == 0x14 \
             and self[23] == OP_EQUALVERIFY \
             and self[24] == OP_CHECKSIG
+
+
+def p2pkh_script(pubkey_hash: bytes) -> Script:
+    assert len(pubkey_hash) == 0x14
+    return Script([OP_DUP, OP_HASH160, pubkey_hash, OP_EQUALVERIFY, OP_CHECKSIG])

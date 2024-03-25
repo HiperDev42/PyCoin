@@ -1,3 +1,3 @@
-from .wallet import Wallet, InsuffitientFunds, create_wallet, Pay2PubHash
+from .wallet import Wallet, InsuffitientFunds, create_wallet
 
-__all__ = ['Wallet', 'InsuffitientFunds', 'create_wallet', 'Pay2PubHash']
+__all__ = ['Wallet', 'InsuffitientFunds', 'create_wallet']

@@ -16,8 +16,8 @@ def test_send_funds():
     bob = create_if_not_exists('bob.pem', blockchain)
     miner = create_if_not_exists('miner.pem', blockchain)
 
-    if alice.getBalance() == 0:
-        blockchain.minePendingTxs(alice.pubKeyHash())
+    if alice.getBalance() <= 1:
+        blockchain.minePendingTxs(alice.get_p2pkh_address())
 
     aliceBalance = alice.getBalance()
     bobBalance = bob.getBalance()
@@ -30,5 +30,6 @@ def test_send_funds():
 
     assert bob.getBalance() == bobBalance + amount
     assert alice.getBalance() == aliceBalance - amount
+    blockchain.save()
     logger.info(f'Alice: {alice.getBalance()}')
     logger.info(f'Bob: {bob.getBalance()}')

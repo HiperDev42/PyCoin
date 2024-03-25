@@ -3,6 +3,8 @@ from Crypto.PublicKey import RSA
 from Crypto.Signature import pkcs1_15
 from pycoin.tx import Tx, TxIn, TxOut
 from pycoin.blockchain.coin import Coin
+from pycoin.script import Script, p2pkh_script
+from pycoin.utils import hash160
 from typing import TYPE_CHECKING
 import os
 
@@ -12,11 +14,6 @@ if TYPE_CHECKING:
 
 class InsuffitientFunds(Exception):
     ...
-
-
-def Pay2PubHash(pub_hash: SHA256.SHA256Hash) -> list[str]:
-    return ['OP_DUP', 'OP_HASH160', 'OP_PUSHDATA', pub_hash.hexdigest(), 'OP_EQUALVERIFY',
-            'OP_CHECKSIG']
 
 
 class Wallet:
@@ -38,7 +35,7 @@ class Wallet:
         return key
 
     def pubKeyHash(self):
-        return SHA256.new(self.public_key.export_key('DER'))
+        return hash160(self.public_key.export_key('DER'))
 
     def spendSig(self, coin: Coin) -> bytes:
         prev_hash = SHA256.new(coin.tx.hash.digest())
@@ -46,8 +43,8 @@ class Wallet:
         signature = pkcs1_15.new(key).sign(prev_hash)
         return [signature, self.public_key.export_key('DER')]
 
-    def get_p2pkh_address(self) -> list[str]:
-        return Pay2PubHash(self.pubKeyHash())
+    def get_p2pkh_address(self) -> Script:
+        return p2pkh_script(self.pubKeyHash())
 
     def getUTXOs(self) -> list[Coin]:
         p2pkh_address = self.get_p2pkh_address()
