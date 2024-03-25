@@ -32,3 +32,5 @@ def test_p2pkh_eval():
     stack = [signature, pubkey_bytes]
 
     result = Eval(stack, script, tx)
+    assert len(result.stack) == 1
+    assert result.stack[0] == b'\x01'
