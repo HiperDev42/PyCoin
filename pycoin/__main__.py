@@ -1,4 +1,4 @@
-if __name__ == '__main__':
-    import pycoin.cli
+import pycoin.network.node
 
-    pycoin.cli.app()
+node = pycoin.network.node.BaseNode(("127.0.0.1", 8888))
+node.serve_forever()
