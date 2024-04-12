@@ -1,4 +1,7 @@
-import pycoin.network.node
+from pycoin.network.node import Node
 
-node = pycoin.network.node.BaseNode(("127.0.0.1", 8888))
-node.serve_forever()
+HOST = '127.0.0.1'
+PORT = 8888
+
+node = Node(HOST, PORT)
+node.start()
